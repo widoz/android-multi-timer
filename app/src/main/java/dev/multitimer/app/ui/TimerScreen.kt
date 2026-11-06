@@ -21,6 +21,16 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,12 +73,18 @@ import kotlinx.coroutines.delay
 
 private val QuickStarts = listOf(60L, 5 * 60L, 10 * 60L, 30 * 60L)
 
+/** Sheet target: null = closed, NEW_TIMER = create, otherwise the id of the timer being edited. */
+private const val NEW_TIMER = -1
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimerScreen() {
     val context = LocalContext.current
     val timers by TimerRepository.timers.collectAsStateWithLifecycle()
-    var showSheet by rememberSaveable { mutableStateOf(false) }
+    var sheetTarget by rememberSaveable { mutableStateOf<Int?>(null) }
+    var confirmDeleteId by rememberSaveable { mutableStateOf<Int?>(null) }
+    val snackbarHost = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Clock for the UI only; it ticks while the screen is visible.
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -109,7 +125,19 @@ fun TimerScreen() {
     val summary = if (ringing > 0) pluralStringResource(R.plurals.summary_ringing, ringing, baseSummary, ringing) else baseSummary
     val nextColor = timers.size % TIMER_COLOR_COUNT
 
+    fun deleteWithUndo(id: Int) {
+        val deleted = TimerRepository.delete(id) ?: return
+        val message = context.getString(R.string.deleted, deleted.timer.label)
+        val undo = context.getString(R.string.undo)
+        scope.launch {
+            snackbarHost.currentSnackbarData?.dismiss()
+            val result = snackbarHost.showSnackbar(message, actionLabel = undo, duration = SnackbarDuration.Short)
+            if (result == SnackbarResult.ActionPerformed) TimerRepository.restore(deleted)
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
             TopAppBar(
                 title = {
@@ -132,7 +160,7 @@ fun TimerScreen() {
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { showSheet = true },
+                onClick = { sheetTarget = NEW_TIMER },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.new_timer)) },
             )
@@ -176,17 +204,69 @@ fun TimerScreen() {
                 item(key = "empty") { EmptyState() }
             }
             items(timers, key = { it.id }) { timer ->
-                TimerCard(timer = timer, now = now, modifier = Modifier.animateItem())
+                TimerCard(
+                    timer = timer,
+                    now = now,
+                    onEdit = { sheetTarget = timer.id },
+                    onDelete = { confirmDeleteId = timer.id },
+                    modifier = Modifier.animateItem(),
+                )
             }
         }
     }
 
-    if (showSheet) {
-        NewTimerSheet(
-            defaultColor = nextColor,
-            onDismiss = { showSheet = false },
-            onCreate = { label, ms, color -> TimerRepository.add(label, ms, color) },
+    val target = sheetTarget
+    if (target != null) {
+        val editing = timers.firstOrNull { it.id == target }
+        if (target != NEW_TIMER && editing == null) {
+            // The timer was deleted (e.g. from its notification) while its sheet was open.
+            LaunchedEffect(target) { sheetTarget = null }
+        } else {
+            key(target) {
+                TimerSheet(
+                    editing = editing,
+                    defaultColor = nextColor,
+                    onDismiss = { sheetTarget = null },
+                    onSave = { label, ms, color ->
+                        if (editing == null) TimerRepository.add(label, ms, color)
+                        else TimerRepository.edit(editing.id, label, ms, color)
+                    },
+                )
+            }
+        }
+    }
+
+    val toDelete = timers.firstOrNull { it.id == confirmDeleteId }
+    if (toDelete != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteId = null },
+            title = { Text(stringResource(R.string.delete_title, toDelete.label)) },
+            text = {
+                Text(
+                    stringResource(
+                        when (toDelete.state) {
+                            TimerState.RUNNING -> R.string.delete_running
+                            TimerState.FINISHED -> R.string.delete_ringing
+                            TimerState.PAUSED -> R.string.delete_idle
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDeleteId = null
+                        deleteWithUndo(toDelete.id)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDeleteId = null }) { Text(stringResource(R.string.cancel)) }
+            },
         )
+    } else if (confirmDeleteId != null) {
+        LaunchedEffect(confirmDeleteId) { confirmDeleteId = null }
     }
 }
 

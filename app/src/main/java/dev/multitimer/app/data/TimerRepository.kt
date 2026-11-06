@@ -102,6 +102,35 @@ object TimerRepository {
         }
     }
 
+    /** Removes a minute. Ignored once a minute or less is left, so it never ends a timer. */
+    fun subtractMinute(id: Int) = update(id) {
+        val left = it.remainingAt(System.currentTimeMillis())
+        val total = maxOf(MINUTE, it.totalMs - MINUTE)
+        when {
+            it.state == TimerState.FINISHED || left <= MINUTE -> it
+            it.state == TimerState.RUNNING -> it.copy(totalMs = total, endAt = it.endAt - MINUTE)
+            else -> it.copy(totalMs = total, remainingMs = it.remainingMs - MINUTE)
+        }
+    }
+
+    /**
+     * Changes label, color and duration. Label and color apply in place. A new duration
+     * starts the timer over: a running timer restarts from the new time, any other
+     * timer becomes ready at the new time.
+     */
+    fun edit(id: Int, label: String, totalMs: Long, colorIndex: Int) = update(id) {
+        val renamed = it.copy(label = label.trim().ifEmpty { it.label }, colorIndex = colorIndex)
+        when {
+            totalMs == it.totalMs -> renamed
+            it.state == TimerState.RUNNING -> renamed.copy(
+                totalMs = totalMs,
+                remainingMs = totalMs,
+                endAt = System.currentTimeMillis() + totalMs,
+            )
+            else -> renamed.copy(state = TimerState.PAUSED, totalMs = totalMs, remainingMs = totalMs, endAt = 0)
+        }
+    }
+
     /** Called by the alarm, or by the UI if it notices first. Safe to call twice. */
     fun finish(id: Int) = update(id) {
         if (it.state == TimerState.RUNNING) it.copy(state = TimerState.FINISHED, remainingMs = 0) else it
@@ -115,12 +144,31 @@ object TimerRepository {
         _timers.value.filter { it.state == TimerState.RUNNING }.forEach { pause(it.id) }
     }
 
+    /** A deleted timer and where it was, so Undo can put it back. */
+    data class Deleted(val timer: TimerItem, val index: Int)
+
     @Synchronized
-    fun delete(id: Int) {
+    fun delete(id: Int): Deleted? {
+        val index = _timers.value.indexOfFirst { it.id == id }
+        if (index < 0) return null
+        val timer = _timers.value[index]
         _timers.value = _timers.value.filterNot { it.id == id }
         save()
         AlarmScheduler.cancel(app, id)
         TimerNotifier.cancel(app, id)
+        return Deleted(timer, index)
+    }
+
+    /** Undo for [delete]. A running timer kept counting while it was gone. */
+    @Synchronized
+    fun restore(deleted: Deleted) {
+        val t = deleted.timer
+        if (get(t.id) != null) return
+        val list = _timers.value.toMutableList()
+        list.add(deleted.index.coerceIn(0, list.size), t)
+        _timers.value = list
+        save()
+        if (t.state == TimerState.RUNNING && t.endAt <= System.currentTimeMillis()) finish(t.id) else sideEffects(t)
     }
 
     private fun get(id: Int): TimerItem? = _timers.value.firstOrNull { it.id == id }
