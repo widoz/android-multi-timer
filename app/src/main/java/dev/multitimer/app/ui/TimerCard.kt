@@ -2,11 +2,13 @@ package dev.multitimer.app.ui
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,7 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExposurePlus1
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -23,6 +25,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -35,6 +39,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -60,7 +66,13 @@ private val ClockStyle = TextStyle(
 )
 
 @Composable
-fun TimerCard(timer: TimerItem, now: Long, modifier: Modifier = Modifier) {
+fun TimerCard(
+    timer: TimerItem,
+    now: Long,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
     val finished = timer.state == TimerState.FINISHED
@@ -86,53 +98,52 @@ fun TimerCard(timer: TimerItem, now: Long, modifier: Modifier = Modifier) {
             1.dp, if (finished) scheme.error else scheme.outlineVariant,
         ),
     ) {
-        Row(
-            modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 14.dp, end = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { fraction },
-                    modifier = Modifier.fillMaxSize(),
-                    color = accent,
-                    trackColor = scheme.outlineVariant,
-                    strokeWidth = 6.dp,
-                    strokeCap = StrokeCap.Round,
-                )
-                Text(
-                    "${ceil(fraction * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = scheme.onSurfaceVariant,
-                )
-            }
-
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(Modifier.size(8.dp).background(timerColor(timer.colorIndex), CircleShape))
+        Column(Modifier.padding(start = 16.dp, top = 14.dp, end = 12.dp, bottom = 6.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = { fraction },
+                        modifier = Modifier.fillMaxSize(),
+                        color = accent,
+                        trackColor = scheme.outlineVariant,
+                        strokeWidth = 6.dp,
+                        strokeCap = StrokeCap.Round,
+                    )
                     Text(
-                        timer.label,
-                        style = MaterialTheme.typography.titleSmall,
+                        "${ceil(fraction * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = scheme.onSurfaceVariant,
+                    )
+                }
+
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Box(Modifier.size(8.dp).background(timerColor(timer.colorIndex), CircleShape))
+                        Text(
+                            timer.label,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Text(
+                        formatClock(remaining),
+                        style = ClockStyle,
+                        color = if (finished) scheme.error else scheme.onSurface,
+                        maxLines = 1,
+                    )
+                    Text(
+                        status,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Text(
-                    formatClock(remaining),
-                    style = ClockStyle,
-                    color = if (finished) scheme.error else scheme.onSurface,
-                    maxLines = 1,
-                )
-                Text(
-                    status,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val (icon, desc) = when (timer.state) {
                     TimerState.FINISHED -> Icons.Filled.Stop to R.string.stop
                     TimerState.RUNNING -> Icons.Filled.Pause to R.string.pause
@@ -154,13 +165,44 @@ fun TimerCard(timer: TimerItem, now: Long, modifier: Modifier = Modifier) {
                 ) {
                     Icon(icon, contentDescription = stringResource(desc))
                 }
-                Row {
-                    SmallAction(Icons.Filled.ExposurePlus1, R.string.add_minute) { TimerRepository.addMinute(timer.id) }
-                    SmallAction(Icons.Filled.Refresh, R.string.reset) { TimerRepository.reset(timer.id) }
-                    SmallAction(Icons.Filled.Delete, R.string.delete) { TimerRepository.delete(timer.id) }
-                }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                color = if (finished) scheme.error.copy(alpha = 0.35f) else scheme.outlineVariant,
+            )
+
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StepButton(
+                    text = R.string.subtract_minute,
+                    description = R.string.cd_subtract_minute,
+                    enabled = !finished && remaining > TimerRepository.MINUTE,
+                ) { TimerRepository.subtractMinute(timer.id) }
+                StepButton(
+                    text = R.string.add_minute,
+                    description = R.string.cd_add_minute,
+                    enabled = true,
+                ) { TimerRepository.addMinute(timer.id) }
+                Spacer(Modifier.weight(1f))
+                SmallAction(Icons.Filled.Refresh, R.string.reset) { TimerRepository.reset(timer.id) }
+                SmallAction(Icons.Filled.Edit, R.string.edit, onEdit)
+                SmallAction(Icons.Filled.Delete, R.string.delete, onDelete)
             }
         }
+    }
+}
+
+@Composable
+private fun StepButton(text: Int, description: Int, enabled: Boolean, onClick: () -> Unit) {
+    val label = stringResource(description)
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.height(32.dp).semantics { contentDescription = label },
+        shape = RoundedCornerShape(8.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+    ) {
+        Text(stringResource(text), style = MaterialTheme.typography.labelMedium)
     }
 }
 

@@ -1,7 +1,11 @@
 # Multi Timer
 
 An Android app for running several countdown timers at once. Each timer is independent:
-start, pause, reset, add a minute or delete any of them without affecting the others.
+start, pause, reset, add or remove a minute, edit or delete any of them without affecting the others.
+
+- **Edit** reuses the new-timer panel. Label and color change in place; a new duration restarts
+  the timer, after a confirmation if it had already counted some time.
+- **Delete** asks for confirmation, then offers Undo for a few seconds.
 
 - **Min Android version:** 13 (API 33). Targets API 35.
 - **Stack:** Kotlin, Jetpack Compose, Material 3. No third-party libraries.
@@ -29,7 +33,7 @@ The APK lands in `app/build/outputs/apk/debug/`.
 | Alarms | `alarm/AlarmScheduler.kt` | One exact alarm per running timer (`setExactAndAllowWhileIdle`), so timers finish on time even in Doze or with the app closed. |
 | Notifications | `alarm/TimerNotifier.kt` | One notification per timer. Running ones use the system countdown chronometer (no foreground service needed); finished ones ring with the alarm sound until stopped. |
 | Receivers | `alarm/Receivers.kt` | Alarm firing, notification buttons (Pause/Resume, +1 min, Reset/Stop) and restoring timers after reboot or app update. |
-| UI | `ui/` | Timer list, quick-start chips, new-timer bottom sheet. |
+| UI | `ui/` | Timer list and cards, quick-start chips, create/edit bottom sheet, confirmation dialogs, Undo snackbar. |
 
 ## Permissions
 

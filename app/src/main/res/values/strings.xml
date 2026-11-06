@@ -19,6 +19,13 @@
     <string name="stop">Stop</string>
     <string name="reset">Reset</string>
     <string name="add_minute">+1 min</string>
+    <string name="subtract_minute">−1 min</string>
+    <string name="cd_add_minute">Add 1 minute</string>
+    <string name="cd_subtract_minute">Remove 1 minute</string>
+    <string name="edit">Edit</string>
+    <string name="edit_timer">Edit timer</string>
+    <string name="save">Save</string>
+    <string name="undo">Undo</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
 
@@ -38,6 +45,17 @@
     <string name="status_paused">Paused · of %1$s</string>
     <string name="status_done">Time\'s up</string>
     <string name="empty">No timers yet.\nTap New timer or a quick start chip to add one.</string>
+
+    <string name="delete_title">Delete \"%1$s\"?</string>
+    <string name="delete_running">It is still running. The timer will stop and be removed.</string>
+    <string name="delete_ringing">Its alarm will stop and the timer will be removed.</string>
+    <string name="delete_idle">The timer will be removed.</string>
+    <string name="deleted">\"%1$s\" deleted</string>
+
+    <string name="restart_title">Restart timer?</string>
+    <string name="restart_running">\"%1$s\" is running. Saving the new duration stops it and starts it again from %2$s.</string>
+    <string name="restart_paused">\"%1$s\" is paused with %2$s left. Saving the new duration resets it to %3$s.</string>
+    <string name="restart">Restart</string>
 
     <string name="perm_title">Turn on notifications</string>
     <string name="perm_body">Timers can only alert you when they finish if notifications are allowed.</string>

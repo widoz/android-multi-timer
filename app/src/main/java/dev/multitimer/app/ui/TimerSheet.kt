@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -40,25 +41,35 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.multitimer.app.R
+import dev.multitimer.app.data.TimerItem
+import dev.multitimer.app.data.TimerState
+import dev.multitimer.app.data.formatClock
 import dev.multitimer.app.ui.theme.TIMER_COLOR_COUNT
 import dev.multitimer.app.ui.theme.timerColor
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewTimerSheet(
+/**
+ * Bottom sheet for creating a timer, or editing [editing] when it is not null.
+ * Changing the duration of a timer that already counted some time asks for confirmation.
+ */
+fun TimerSheet(
+    editing: TimerItem?,
     defaultColor: Int,
     onDismiss: () -> Unit,
-    onCreate: (label: String, durationMs: Long, colorIndex: Int) -> Unit,
+    onSave: (label: String, durationMs: Long, colorIndex: Int) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    var label by rememberSaveable { mutableStateOf("") }
-    var hours by rememberSaveable { mutableStateOf("0") }
-    var minutes by rememberSaveable { mutableStateOf("5") }
-    var seconds by rememberSaveable { mutableStateOf("0") }
-    var color by rememberSaveable { mutableIntStateOf(defaultColor) }
+    val initialSeconds = editing?.let { it.totalMs / 1000 } ?: (5 * 60L)
+    var label by rememberSaveable { mutableStateOf(editing?.label ?: "") }
+    var hours by rememberSaveable { mutableStateOf(two(initialSeconds / 3600)) }
+    var minutes by rememberSaveable { mutableStateOf(two(initialSeconds % 3600 / 60)) }
+    var seconds by rememberSaveable { mutableStateOf(two(initialSeconds % 60)) }
+    var color by rememberSaveable { mutableIntStateOf(editing?.colorIndex ?: defaultColor) }
     var showError by remember { mutableStateOf(false) }
+    var confirmRestartMs by rememberSaveable { mutableStateOf<Long?>(null) }
 
     fun close() {
         scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
@@ -69,7 +80,10 @@ fun NewTimerSheet(
             modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(stringResource(R.string.new_timer), style = MaterialTheme.typography.titleLarge)
+            Text(
+                stringResource(if (editing == null) R.string.new_timer else R.string.edit_timer),
+                style = MaterialTheme.typography.titleLarge,
+            )
 
             OutlinedTextField(
                 value = label,
@@ -123,18 +137,61 @@ fun NewTimerSheet(
                     val h = hours.toLongOrNull() ?: 0
                     val m = (minutes.toLongOrNull() ?: 0).coerceAtMost(59)
                     val s = (seconds.toLongOrNull() ?: 0).coerceAtMost(59)
-                    val totalSeconds = h * 3600 + m * 60 + s
-                    if (totalSeconds <= 0) {
-                        showError = true
-                    } else {
-                        onCreate(label, totalSeconds * 1000, color)
-                        close()
+                    val totalMs = (h * 3600 + m * 60 + s) * 1000
+                    when {
+                        totalMs <= 0 -> showError = true
+                        editing != null && totalMs != editing.totalMs && editing.hasProgress ->
+                            confirmRestartMs = totalMs
+                        else -> {
+                            onSave(label, totalMs, color)
+                            close()
+                        }
                     }
-                }) { Text(stringResource(R.string.start)) }
+                }) {
+                    Text(stringResource(if (editing == null) R.string.start else R.string.save))
+                }
             }
         }
     }
+
+    val pendingMs = confirmRestartMs
+    if (editing != null && pendingMs != null) {
+        AlertDialog(
+            onDismissRequest = { confirmRestartMs = null },
+            title = { Text(stringResource(R.string.restart_title)) },
+            text = {
+                Text(
+                    if (editing.state == TimerState.RUNNING) {
+                        stringResource(R.string.restart_running, editing.label, formatClock(pendingMs))
+                    } else {
+                        stringResource(
+                            R.string.restart_paused,
+                            editing.label,
+                            formatClock(editing.remainingMs),
+                            formatClock(pendingMs),
+                        )
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmRestartMs = null
+                    onSave(label, pendingMs, color)
+                    close()
+                }) { Text(stringResource(R.string.restart)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmRestartMs = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
 }
+
+private fun two(n: Long) = n.toString().padStart(2, '0')
+
+/** Running, or paused partway through: changing the duration would lose that progress. */
+private val TimerItem.hasProgress: Boolean
+    get() = state == TimerState.RUNNING || (state == TimerState.PAUSED && remainingMs < totalMs)
 
 @Composable
 private fun DurationField(value: String, unit: Int, modifier: Modifier, onChange: (String) -> Unit) {
