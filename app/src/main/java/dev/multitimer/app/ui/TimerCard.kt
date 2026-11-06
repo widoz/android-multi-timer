@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +32,13 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
@@ -129,11 +135,11 @@ fun TimerCard(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    Text(
-                        formatClock(remaining),
+                    // Shrinks to fit instead of clipping when the phone's font size is large.
+                    ShrinkToFitText(
+                        text = formatClock(remaining),
                         style = ClockStyle,
                         color = if (finished) scheme.error else scheme.onSurface,
-                        maxLines = 1,
                     )
                     Text(
                         status,
@@ -192,13 +198,36 @@ fun TimerCard(
     }
 }
 
+/** One line of text that steps its font size down until it fits, never below [minSize]. */
+@Composable
+private fun ShrinkToFitText(
+    text: String,
+    style: TextStyle,
+    color: Color,
+    minSize: TextUnit = 14.sp,
+) {
+    val fontScale = LocalDensity.current.fontScale
+    var fontSize by remember(fontScale) { mutableStateOf(style.fontSize) }
+    Text(
+        text = text,
+        style = style.copy(fontSize = fontSize),
+        color = color,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { result ->
+            if (result.didOverflowWidth && fontSize > minSize) fontSize = fontSize * 0.9f
+        },
+    )
+}
+
 @Composable
 private fun StepButton(text: Int, description: Int, enabled: Boolean, onClick: () -> Unit) {
     val label = stringResource(description)
+    // Default button height keeps a 48dp touch target; the outline border is >= 3:1.
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.height(32.dp).semantics { contentDescription = label },
+        modifier = Modifier.semantics { contentDescription = label },
         shape = RoundedCornerShape(8.dp),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
     ) {
@@ -208,11 +237,12 @@ private fun StepButton(text: Int, description: Int, enabled: Boolean, onClick: (
 
 @Composable
 private fun SmallAction(icon: ImageVector, description: Int, onClick: () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.size(32.dp)) {
+    // Default IconButton: 40dp visual, 48dp touch target.
+    IconButton(onClick = onClick) {
         Icon(
             icon,
             contentDescription = stringResource(description),
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
