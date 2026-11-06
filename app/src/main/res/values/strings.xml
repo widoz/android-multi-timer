@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Multi Timer</string>
+    <string name="timers">Timers</string>
+    <string name="summary">%1$d running · %2$d total</string>
+    <string name="summary_ringing">%1$s · %2$d ringing</string>
+    <string name="pause_all">Pause all</string>
+    <string name="new_timer">New timer</string>
+
+    <string name="start">Start</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
+    <string name="stop">Stop</string>
+    <string name="reset">Reset</string>
+    <string name="add_minute">+1 min</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="label">Label</string>
+    <string name="label_hint">e.g. Eggs</string>
+    <string name="duration">Duration</string>
+    <string name="hours">hrs</string>
+    <string name="minutes">min</string>
+    <string name="seconds">sec</string>
+    <string name="color">Color</string>
+    <string name="duration_error">Set a duration longer than zero.</string>
+    <string name="default_label">Timer %1$d</string>
+    <string name="quick_add">+ %1$s</string>
+
+    <string name="status_ends">Ends at %1$s</string>
+    <string name="status_ready">Ready · %1$s</string>
+    <string name="status_paused">Paused · of %1$s</string>
+    <string name="status_done">Time\'s up</string>
+    <string name="empty">No timers yet.\nTap New timer or a quick start chip to add one.</string>
+
+    <string name="perm_title">Turn on notifications</string>
+    <string name="perm_body">Timers can only alert you when they finish if notifications are allowed.</string>
+    <string name="perm_action">Open settings</string>
+
+    <string name="channel_running">Running timers</string>
+    <string name="channel_running_desc">Shows each running or paused timer with quick controls.</string>
+    <string name="channel_alarm">Finished timers</string>
+    <string name="channel_alarm_desc">Rings when a timer reaches zero.</string>
+    <string name="notif_paused">Paused · %1$s left</string>
+    <string name="notif_done">Time\'s up · %1$s timer</string>
+</resources>
