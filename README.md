@@ -36,6 +36,20 @@ The APK lands in `app/build/outputs/apk/debug/`.
 | Receivers | `alarm/Receivers.kt` | Alarm firing, notification buttons (Pause/Resume, +1 min, Reset/Stop) and restoring timers after reboot or app update. |
 | UI | `ui/` | Timer list and cards, quick-start chips, create/edit bottom sheet, confirmation dialogs, Undo snackbar. |
 
+## Release builds
+
+Release builds are signed with the key described in `keystore.properties` at the project root.
+That file and the `.jks` key are git-ignored: keep them private and back them up, because updates
+only install over an existing copy when signed with the same key.
+
+```bash
+./gradlew assembleRelease
+```
+
+The signed APK lands in `app/build/outputs/apk/release/app-release.apk`. Without
+`keystore.properties`, the release APK is built unsigned. Bump `versionCode` and `versionName` in
+`app/build.gradle.kts` for each release.
+
 ## Theme and accessibility
 
 - Light is white, dark uses Material's neutral greys (`#121212`, cards `#1E1E1E`). Controls are
