@@ -1,6 +1,8 @@
 package dev.multitimer.app.data
 
+import android.annotation.SuppressLint
 import android.content.Context
+import androidx.core.content.edit
 import dev.multitimer.app.R
 import dev.multitimer.app.alarm.AlarmScheduler
 import dev.multitimer.app.alarm.TimerNotifier
@@ -14,6 +16,7 @@ import org.json.JSONArray
  * alarm and notification are updated, so each timer behaves the same whether the app
  * is open, in the background, or was killed.
  */
+@SuppressLint("StaticFieldLeak") // holds the Application context only
 object TimerRepository {
     private const val PREFS = "timers"
     private const val KEY_LIST = "list"
@@ -150,9 +153,9 @@ object TimerRepository {
     private fun save() {
         val arr = JSONArray()
         _timers.value.forEach { arr.put(it.toJson()) }
-        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(KEY_LIST, arr.toString())
-            .putInt(KEY_NEXT_ID, nextId)
-            .apply()
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
+            putString(KEY_LIST, arr.toString())
+            putInt(KEY_NEXT_ID, nextId)
+        }
     }
 }

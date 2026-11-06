@@ -2,8 +2,14 @@
 <resources>
     <string name="app_name">Multi Timer</string>
     <string name="timers">Timers</string>
-    <string name="summary">%1$d running · %2$d total</string>
-    <string name="summary_ringing">%1$s · %2$d ringing</string>
+    <plurals name="summary">
+        <item quantity="one">%1$d running · %2$d total</item>
+        <item quantity="other">%1$d running · %2$d total</item>
+    </plurals>
+    <plurals name="summary_ringing">
+        <item quantity="one">%1$s · %2$d ringing</item>
+        <item quantity="other">%1$s · %2$d ringing</item>
+    </plurals>
     <string name="pause_all">Pause all</string>
     <string name="new_timer">New timer</string>
 
