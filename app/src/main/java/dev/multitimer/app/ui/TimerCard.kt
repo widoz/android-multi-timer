@@ -101,7 +101,7 @@ fun TimerCard(
             containerColor = if (finished) scheme.errorContainer else scheme.surfaceContainerLow,
         ),
         border = androidx.compose.foundation.BorderStroke(
-            1.dp, if (finished) scheme.error else scheme.outlineVariant,
+            1.dp, if (finished) scheme.error else scheme.outline,
         ),
     ) {
         Column(Modifier.padding(start = 16.dp, top = 14.dp, end = 12.dp, bottom = 6.dp)) {
@@ -175,7 +175,7 @@ fun TimerCard(
 
             HorizontalDivider(
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-                color = if (finished) scheme.error.copy(alpha = 0.35f) else scheme.outlineVariant,
+                color = if (finished) scheme.error.copy(alpha = 0.35f) else scheme.outline,
             )
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

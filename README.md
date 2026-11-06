@@ -43,8 +43,8 @@ The APK lands in `app/build/outputs/apk/debug/`.
 - The Theme menu calls `UiModeManager.setApplicationNightMode` (Android 12+), so the status bar,
   startup window and dialogs follow the choice too (`data/ThemeSettings.kt`).
 - Colors meet WCAG 2.2 AA in both themes: text >= 4.5:1, control outlines and timer colors >= 3:1.
-  In `ui/theme/Theme.kt`, `outline` marks controls and must stay >= 3:1; `outlineVariant` is
-  decorative only.
+  In `ui/theme/Theme.kt`, `outline` is used for every border and line and must stay >= 3:1;
+  `outlineVariant` is only the progress-ring track.
 - Touch targets are at least 48dp, icon buttons and color swatches have TalkBack labels, and the
   countdown shrinks to fit instead of clipping at large font sizes.
 

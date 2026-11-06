@@ -15,8 +15,8 @@ import androidx.compose.ui.platform.LocalContext
  * Color is reserved for each timer's own color and the orange of a finished timer.
  *
  * All pairs meet WCAG 2.2 AA: text >= 4.5:1, control outlines and timer colors >= 3:1.
- * `outline` marks controls (text fields, chips, buttons) and must stay >= 3:1;
- * `outlineVariant` is decorative only (card borders, dividers, progress track).
+ * `outline` is used for every border and line (cards, dividers, chips, buttons, text
+ * fields, menus) and must stay >= 3:1; `outlineVariant` is only the progress-ring track.
  */
 
 private val Light = lightColorScheme(

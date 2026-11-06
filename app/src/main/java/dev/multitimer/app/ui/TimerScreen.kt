@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material3.AssistChip
@@ -84,7 +85,7 @@ import dev.multitimer.app.data.formatDuration
 import dev.multitimer.app.ui.theme.TIMER_COLOR_COUNT
 import kotlinx.coroutines.delay
 
-private val QuickStarts = listOf(60L, 5 * 60L, 10 * 60L, 30 * 60L)
+private val QuickStarts = listOf(60L, 5 * 60L, 10 * 60L, 20 * 60L, 30 * 60L, 60 * 60L)
 
 /** Sheet target: null = closed, NEW_TIMER = create, otherwise the id of the timer being edited. */
 private const val NEW_TIMER = -1
@@ -300,7 +301,11 @@ private fun ThemeMenuButton() {
         IconButton(onClick = { expanded = true }) {
             Icon(Icons.Filled.BrightnessMedium, contentDescription = stringResource(R.string.theme))
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        ) {
             Text(
                 stringResource(R.string.theme),
                 style = MaterialTheme.typography.labelMedium,
