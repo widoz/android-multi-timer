@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -104,8 +105,8 @@ fun TimerScreen() {
 
     val running = timers.count { it.state == TimerState.RUNNING }
     val ringing = timers.count { it.state == TimerState.FINISHED }
-    val baseSummary = stringResource(R.string.summary, running, timers.size)
-    val summary = if (ringing > 0) stringResource(R.string.summary_ringing, baseSummary, ringing) else baseSummary
+    val baseSummary = pluralStringResource(R.plurals.summary, running, running, timers.size)
+    val summary = if (ringing > 0) pluralStringResource(R.plurals.summary_ringing, ringing, baseSummary, ringing) else baseSummary
     val nextColor = timers.size % TIMER_COLOR_COUNT
 
     Scaffold(
