@@ -20,7 +20,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import dev.multitimer.app.data.ThemeMode
+import dev.multitimer.app.data.ThemeSettings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.SnackbarDuration
@@ -154,6 +167,7 @@ fun TimerScreen() {
                     IconButton(onClick = { TimerRepository.pauseAll() }, enabled = running > 0) {
                         Icon(Icons.Filled.Pause, contentDescription = stringResource(R.string.pause_all))
                     }
+                    ThemeMenuButton()
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
@@ -161,6 +175,8 @@ fun TimerScreen() {
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { sheetTarget = NEW_TIMER },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.new_timer)) },
             )
@@ -196,6 +212,11 @@ fun TimerScreen() {
                         AssistChip(
                             onClick = { TimerRepository.add(text, secs * 1000, nextColor) },
                             label = { Text(stringResource(R.string.quick_add, text)) },
+                            // outline (not outlineVariant) keeps the chip edge at >= 3:1
+                            border = AssistChipDefaults.assistChipBorder(
+                                enabled = true,
+                                borderColor = MaterialTheme.colorScheme.outline,
+                            ),
                         )
                     }
                 }
@@ -267,6 +288,53 @@ fun TimerScreen() {
         )
     } else if (confirmDeleteId != null) {
         LaunchedEffect(confirmDeleteId) { confirmDeleteId = null }
+    }
+}
+
+/** Top-bar menu: System default / Light / Dark. */
+@Composable
+private fun ThemeMenuButton() {
+    var expanded by remember { mutableStateOf(false) }
+    val current by ThemeSettings.mode.collectAsStateWithLifecycle()
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(Icons.Filled.BrightnessMedium, contentDescription = stringResource(R.string.theme))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            Text(
+                stringResource(R.string.theme),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .semantics { heading() },
+            )
+            ThemeMode.entries.forEach { mode ->
+                val selected = mode == current
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(
+                                when (mode) {
+                                    ThemeMode.SYSTEM -> R.string.theme_system
+                                    ThemeMode.LIGHT -> R.string.theme_light
+                                    ThemeMode.DARK -> R.string.theme_dark
+                                }
+                            )
+                        )
+                    },
+                    leadingIcon = { RadioButton(selected = selected, onClick = null) },
+                    onClick = {
+                        expanded = false
+                        ThemeSettings.set(mode)
+                    },
+                    modifier = Modifier.semantics {
+                        this.selected = selected
+                        role = Role.RadioButton
+                    },
+                )
+            }
+        }
     }
 }
 

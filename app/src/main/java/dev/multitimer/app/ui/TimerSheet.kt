@@ -2,7 +2,11 @@ package dev.multitimer.app.ui
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -110,21 +114,33 @@ fun TimerSheet(
             }
 
             Text(stringResource(R.string.color), style = MaterialTheme.typography.labelLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.selectableGroup(),
+            ) {
                 repeat(TIMER_COLOR_COUNT) { i ->
                     val selected = i == color
+                    val name = stringResource(ColorNames[i])
+                    // 48dp touch target around a 36dp swatch; announced as "Teal, selected" etc.
                     Box(
-                        Modifier
-                            .size(36.dp)
+                        modifier = Modifier
+                            .size(48.dp)
                             .clip(CircleShape)
-                            .background(timerColor(i))
-                            .border(
-                                width = if (selected) 3.dp else 0.dp,
-                                color = if (selected) MaterialTheme.colorScheme.onSurface else timerColor(i),
-                                shape = CircleShape,
-                            )
-                            .clickable(role = Role.RadioButton) { color = i }
-                    )
+                            .selectable(selected = selected, role = Role.RadioButton) { color = i }
+                            .semantics { contentDescription = name },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            Modifier
+                                .size(36.dp)
+                                .background(timerColor(i), CircleShape)
+                                .border(
+                                    width = if (selected) 3.dp else 0.dp,
+                                    color = if (selected) MaterialTheme.colorScheme.onSurface else timerColor(i),
+                                    shape = CircleShape,
+                                )
+                        )
+                    }
                 }
             }
 
@@ -186,6 +202,14 @@ fun TimerSheet(
         )
     }
 }
+
+private val ColorNames = listOf(
+    R.string.color_teal,
+    R.string.color_amber,
+    R.string.color_violet,
+    R.string.color_green,
+    R.string.color_rose,
+)
 
 private fun two(n: Long) = n.toString().padStart(2, '0')
 
