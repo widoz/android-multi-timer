@@ -15,14 +15,19 @@ start, pause, reset, add or remove a minute, edit or delete any of them without 
   mode or Do Not Disturb, so they are not used. One "ringing" notification covers all finished
   timers, with Stop / +1 min (or Stop all).
 
-- **Min Android version:** 13 (API 33). Targets API 35.
+- **Min Android version:** 11 (API 30). Targets API 35.
+  - Android 12: exact alarms use `SCHEDULE_EXACT_ALARM`, which the user can revoke (timers then
+    ring a few minutes late). Android 13+ uses `USE_EXACT_ALARM`, granted at install.
+  - Android 11–12: no notification permission prompt (notifications are on by default).
+  - Android 11: the in-app Theme setting is applied by the app itself; the startup window may
+    briefly show the phone's theme. Android 12+ uses per-app night mode.
 - **Stack:** Kotlin, Jetpack Compose, Material 3. No third-party libraries.
 
 ## Open and run
 
 1. Open this folder in Android Studio (Ladybug or newer) with **File › Open**.
 2. Let Gradle sync; Studio creates `local.properties` pointing at your Android SDK.
-3. Pick an Android 13+ device or emulator and press **Run**.
+3. Pick an Android 11+ device or emulator and press **Run**.
 
 From the command line, with `ANDROID_HOME` set:
 
@@ -61,8 +66,9 @@ The signed APK lands in `app/build/outputs/apk/release/app-release.apk`. Without
 
 - Light is white, dark uses Material's neutral greys (`#121212`, cards `#1E1E1E`). Controls are
   neutral; color is reserved for each timer's color and the orange of a finished timer.
-- The Theme setting calls `UiModeManager.setApplicationNightMode` (Android 12+), so the status bar,
-  startup window and dialogs follow the choice too (`data/AppSettings.kt`).
+- The Theme setting calls `UiModeManager.setApplicationNightMode` on Android 12+, so the status
+  bar, startup window and dialogs follow the choice too (`data/AppSettings.kt`). On Android 11
+  `MainActivity` applies it to the Compose theme and system bars.
 - Colors meet WCAG 2.2 AA in both themes: text >= 4.5:1, control outlines and timer colors >= 3:1.
   In `ui/theme/Theme.kt`, `outline` is used for every border and line and must stay >= 3:1;
   `outlineVariant` is only the progress-ring track.

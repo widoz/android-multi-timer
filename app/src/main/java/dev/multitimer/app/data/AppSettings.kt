@@ -3,6 +3,7 @@ package dev.multitimer.app.data
 import android.annotation.SuppressLint
 import android.app.UiModeManager
 import android.content.Context
+import android.os.Build
 import androidx.core.content.edit
 import dev.multitimer.app.alarm.Sounds
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,9 +15,9 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 /**
  * App-wide settings: theme and the default alarm sound.
  *
- * The theme is applied with UiModeManager.setApplicationNightMode (Android 12+), so the
- * whole app follows it: Compose's isSystemInDarkTheme(), the status bar icons, the startup
- * window and values-night resources.
+ * On Android 12+ the theme is applied with UiModeManager.setApplicationNightMode, so the
+ * whole app follows it, startup window included. On Android 11 MainActivity applies it to
+ * the Compose theme and system bars; the startup window may briefly show the phone's theme.
  *
  * The default sound is used by every timer whose own sound is null. It starts as the
  * phone's alarm sound ([Sounds.PHONE_DEFAULT]).
@@ -55,7 +56,9 @@ object AppSettings {
         app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(KEY_DEFAULT_SOUND, uri) }
     }
 
+    /** Android 12+ only. On Android 11 the Compose theme applies the choice (see MainActivity). */
     private fun applyNightMode(mode: ThemeMode) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         app.getSystemService(UiModeManager::class.java).setApplicationNightMode(
             when (mode) {
                 ThemeMode.SYSTEM -> UiModeManager.MODE_NIGHT_AUTO

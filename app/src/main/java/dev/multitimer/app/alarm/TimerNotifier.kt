@@ -9,6 +9,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -77,9 +78,13 @@ object TimerNotifier {
         NotificationManagerCompat.from(context).cancel(timerId)
     }
 
-    fun canPost(context: Context): Boolean =
-        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+    /** Android 13+: the POST_NOTIFICATIONS permission. Older: the app's notification switch. */
+    fun canPost(context: Context): Boolean {
+        val permitted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
+        return permitted && NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
 
     @SuppressLint("MissingPermission") // checked by canPost()
     private fun post(context: Context, id: Int, n: Notification) {
