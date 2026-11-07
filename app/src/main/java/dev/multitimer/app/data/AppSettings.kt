@@ -1,0 +1,67 @@
+package dev.multitimer.app.data
+
+import android.annotation.SuppressLint
+import android.app.UiModeManager
+import android.content.Context
+import androidx.core.content.edit
+import dev.multitimer.app.alarm.Sounds
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+/**
+ * App-wide settings: theme and the default alarm sound.
+ *
+ * The theme is applied with UiModeManager.setApplicationNightMode (Android 12+), so the
+ * whole app follows it: Compose's isSystemInDarkTheme(), the status bar icons, the startup
+ * window and values-night resources.
+ *
+ * The default sound is used by every timer whose own sound is null. It starts as the
+ * phone's alarm sound ([Sounds.PHONE_DEFAULT]).
+ */
+@SuppressLint("StaticFieldLeak") // holds the Application context only
+object AppSettings {
+    private const val PREFS = "settings"
+    private const val KEY_THEME = "theme_mode"
+    private const val KEY_DEFAULT_SOUND = "default_sound"
+
+    private lateinit var app: Context
+    private val _theme = MutableStateFlow(ThemeMode.SYSTEM)
+    val theme: StateFlow<ThemeMode> = _theme.asStateFlow()
+    private val _defaultSound = MutableStateFlow(Sounds.PHONE_DEFAULT)
+    val defaultSound: StateFlow<String> = _defaultSound.asStateFlow()
+
+    fun init(context: Context) {
+        if (::app.isInitialized) return
+        app = context.applicationContext
+        val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        _theme.value = runCatching { ThemeMode.valueOf(prefs.getString(KEY_THEME, null) ?: "") }
+            .getOrDefault(ThemeMode.SYSTEM)
+        _defaultSound.value = prefs.getString(KEY_DEFAULT_SOUND, null) ?: Sounds.PHONE_DEFAULT
+        applyNightMode(_theme.value)
+    }
+
+    fun setTheme(mode: ThemeMode) {
+        if (mode == _theme.value) return
+        _theme.value = mode
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(KEY_THEME, mode.name) }
+        applyNightMode(mode)
+    }
+
+    fun setDefaultSound(uri: String) {
+        _defaultSound.value = uri
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(KEY_DEFAULT_SOUND, uri) }
+    }
+
+    private fun applyNightMode(mode: ThemeMode) {
+        app.getSystemService(UiModeManager::class.java).setApplicationNightMode(
+            when (mode) {
+                ThemeMode.SYSTEM -> UiModeManager.MODE_NIGHT_AUTO
+                ThemeMode.LIGHT -> UiModeManager.MODE_NIGHT_NO
+                ThemeMode.DARK -> UiModeManager.MODE_NIGHT_YES
+            }
+        )
+    }
+}

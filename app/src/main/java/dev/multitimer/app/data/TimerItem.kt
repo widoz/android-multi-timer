@@ -15,6 +15,8 @@ data class TimerItem(
     val label: String,
     val totalMs: Long,
     val colorIndex: Int,
+    /** Alarm sound URI, or null to use the app's default sound. */
+    val soundUri: String? = null,
     val state: TimerState,
     val remainingMs: Long,
     val endAt: Long,
@@ -33,6 +35,7 @@ data class TimerItem(
         .put("label", label)
         .put("totalMs", totalMs)
         .put("colorIndex", colorIndex)
+        .put("soundUri", soundUri ?: JSONObject.NULL)
         .put("state", state.name)
         .put("remainingMs", remainingMs)
         .put("endAt", endAt)
@@ -43,6 +46,7 @@ data class TimerItem(
             label = o.getString("label"),
             totalMs = o.getLong("totalMs"),
             colorIndex = o.optInt("colorIndex", 0),
+            soundUri = if (o.isNull("soundUri")) null else o.optString("soundUri"),
             state = runCatching { TimerState.valueOf(o.getString("state")) }
                 .getOrDefault(TimerState.PAUSED),
             remainingMs = o.getLong("remainingMs"),

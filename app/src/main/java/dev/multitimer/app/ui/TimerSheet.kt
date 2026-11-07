@@ -45,6 +45,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.multitimer.app.R
+import dev.multitimer.app.data.AppSettings
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.multitimer.app.data.TimerItem
 import dev.multitimer.app.data.TimerState
 import dev.multitimer.app.data.formatClock
@@ -62,7 +72,7 @@ fun TimerSheet(
     editing: TimerItem?,
     defaultColor: Int,
     onDismiss: () -> Unit,
-    onSave: (label: String, durationMs: Long, colorIndex: Int) -> Unit,
+    onSave: (label: String, durationMs: Long, colorIndex: Int, soundUri: String?) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -72,6 +82,8 @@ fun TimerSheet(
     var minutes by rememberSaveable { mutableStateOf(two(initialSeconds % 3600 / 60)) }
     var seconds by rememberSaveable { mutableStateOf(two(initialSeconds % 60)) }
     var color by rememberSaveable { mutableIntStateOf(editing?.colorIndex ?: defaultColor) }
+    var sound by rememberSaveable { mutableStateOf(editing?.soundUri) } // null = app default
+    var pickingSound by rememberSaveable { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
     var confirmRestartMs by rememberSaveable { mutableStateOf<Long?>(null) }
 
@@ -81,7 +93,10 @@ fun TimerSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
@@ -112,6 +127,9 @@ fun TimerSheet(
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+
+            Text(stringResource(R.string.sound), style = MaterialTheme.typography.labelLarge)
+            SoundRow(sound = sound, onClick = { pickingSound = true })
 
             Text(stringResource(R.string.color), style = MaterialTheme.typography.labelLarge)
             Row(
@@ -159,7 +177,7 @@ fun TimerSheet(
                         editing != null && totalMs != editing.totalMs && editing.hasProgress ->
                             confirmRestartMs = totalMs
                         else -> {
-                            onSave(label, totalMs, color)
+                            onSave(label, totalMs, color, sound)
                             close()
                         }
                     }
@@ -168,6 +186,16 @@ fun TimerSheet(
                 }
             }
         }
+    }
+
+    if (pickingSound) {
+        SoundPickerDialog(
+            title = stringResource(R.string.timer_sound),
+            current = sound,
+            allowAppDefault = true,
+            onDismiss = { pickingSound = false },
+            onConfirm = { sound = it },
+        )
     }
 
     val pendingMs = confirmRestartMs
@@ -192,7 +220,7 @@ fun TimerSheet(
             confirmButton = {
                 TextButton(onClick = {
                     confirmRestartMs = null
-                    onSave(label, pendingMs, color)
+                    onSave(label, pendingMs, color, sound)
                     close()
                 }) { Text(stringResource(R.string.restart)) }
             },
@@ -210,6 +238,39 @@ private val ColorNames = listOf(
     R.string.color_green,
     R.string.color_rose,
 )
+
+/** Outlined row showing the timer's sound; opens the picker. */
+@Composable
+private fun SoundRow(sound: String?, onClick: () -> Unit) {
+    val defaultSound by AppSettings.defaultSound.collectAsStateWithLifecycle()
+    val label = if (sound == null) {
+        stringResource(R.string.app_default, rememberSoundTitle(defaultSound))
+    } else {
+        rememberSoundTitle(sound)
+    }
+    val description = stringResource(R.string.sound_row_cd, label)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = description },
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, end = 12.dp, top = 14.dp, bottom = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
 
 private fun two(n: Long) = n.toString().padStart(2, '0')
 

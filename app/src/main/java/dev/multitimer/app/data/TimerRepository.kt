@@ -47,7 +47,7 @@ object TimerRepository {
     }
 
     @Synchronized
-    fun add(label: String, totalMs: Long, colorIndex: Int) {
+    fun add(label: String, totalMs: Long, colorIndex: Int, soundUri: String? = null) {
         val id = nextId++
         val name = label.trim().ifEmpty { app.getString(R.string.default_label, id) }
         val t = TimerItem(
@@ -55,6 +55,7 @@ object TimerRepository {
             label = name,
             totalMs = totalMs,
             colorIndex = colorIndex,
+            soundUri = soundUri,
             state = TimerState.RUNNING,
             remainingMs = totalMs,
             endAt = System.currentTimeMillis() + totalMs,
@@ -114,12 +115,12 @@ object TimerRepository {
     }
 
     /**
-     * Changes label, color and duration. Label and color apply in place. A new duration
+     * Changes label, color, sound and duration. Label, color and sound apply in place. A new duration
      * starts the timer over: a running timer restarts from the new time, any other
      * timer becomes ready at the new time.
      */
-    fun edit(id: Int, label: String, totalMs: Long, colorIndex: Int) = update(id) {
-        val renamed = it.copy(label = label.trim().ifEmpty { it.label }, colorIndex = colorIndex)
+    fun edit(id: Int, label: String, totalMs: Long, colorIndex: Int, soundUri: String?) = update(id) {
+        val renamed = it.copy(label = label.trim().ifEmpty { it.label }, colorIndex = colorIndex, soundUri = soundUri)
         when {
             totalMs == it.totalMs -> renamed
             it.state == TimerState.RUNNING -> renamed.copy(
