@@ -19,8 +19,9 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
  * whole app follows it, startup window included. On Android 11 MainActivity applies it to
  * the Compose theme and system bars; the startup window may briefly show the phone's theme.
  *
- * The default sound is used by every timer whose own sound is null. It starts as the
- * phone's alarm sound ([Sounds.PHONE_DEFAULT]).
+ * The default sound is used by every timer whose own sound is null. It is Power chime
+ * ([Sounds.DEFAULT]) unless the user picked another one. Before 0.4.0 the built-in default was
+ * the phone's alarm sound; it was never saved, so those installs move to Power chime too.
  */
 @SuppressLint("StaticFieldLeak") // holds the Application context only
 object AppSettings {
@@ -31,7 +32,7 @@ object AppSettings {
     private lateinit var app: Context
     private val _theme = MutableStateFlow(ThemeMode.SYSTEM)
     val theme: StateFlow<ThemeMode> = _theme.asStateFlow()
-    private val _defaultSound = MutableStateFlow(Sounds.PHONE_DEFAULT)
+    private val _defaultSound = MutableStateFlow(Sounds.DEFAULT)
     val defaultSound: StateFlow<String> = _defaultSound.asStateFlow()
 
     fun init(context: Context) {
@@ -40,7 +41,7 @@ object AppSettings {
         val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         _theme.value = runCatching { ThemeMode.valueOf(prefs.getString(KEY_THEME, null) ?: "") }
             .getOrDefault(ThemeMode.SYSTEM)
-        _defaultSound.value = prefs.getString(KEY_DEFAULT_SOUND, null) ?: Sounds.PHONE_DEFAULT
+        _defaultSound.value = prefs.getString(KEY_DEFAULT_SOUND, null) ?: Sounds.DEFAULT
         applyNightMode(_theme.value)
     }
 

@@ -8,8 +8,12 @@ start, pause, reset, add or remove a minute, edit or delete any of them without 
 - **Delete** asks for confirmation, then offers Undo for a few seconds.
 - **Settings** (gear icon): Theme (System default, Light, Dark) and the default alarm sound.
 - **Sounds**: each timer uses the default sound unless you pick its own in the New/Edit panel.
-  The list shows the phone's alarm sounds plus "Phone's alarm sound" and "Silent"; tap one to
-  preview it.
+  The picker lists the app's own sounds, then the phone's alarm sounds ("Phone's alarm sound"
+  first), then "Silent"; tap one to preview it.
+- **App sounds**: five original 8-bit sounds in `app/src/main/res/raw` (Power chime, the default;
+  Pixel bell; Beeper; Gentle rise; Jingle). They were synthesized from scratch by
+  `tools/make_sounds.py` (Python + numpy, then `ffmpeg -c:a libvorbis -q:a 5`), so they can be
+  shipped freely and regenerated or tweaked. Stored as `app:<name>`.
 - **Ringing**: `alarm/AlarmService.kt` plays the sound itself on the alarm stream (alarm volume),
   looping until stopped, like a clock app. Notification sounds can be muted by the phone's sound
   mode or Do Not Disturb, so they are not used. One "ringing" notification covers all finished

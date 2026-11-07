@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.multitimer.app.R
@@ -37,6 +39,12 @@ import dev.multitimer.app.alarm.Sounds
 import dev.multitimer.app.data.AppSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+private sealed interface PickerRow {
+    data class Header(val text: String) : PickerRow
+    /** [id] null = "App default". */
+    data class Choice(val id: String?, val label: String) : PickerRow
+}
 
 /** Display name of a stored sound, looked up off the main thread. */
 @Composable
@@ -75,36 +83,56 @@ fun SoundPickerDialog(
     val preview = remember { SoundPreview(context) }
     DisposableEffect(Unit) { onDispose { preview.stop() } }
 
-    val options: List<Pair<String?, String>> = buildList {
-        if (allowAppDefault) add(null to appDefaultLabel)
-        add(Sounds.PHONE_DEFAULT to phoneDefaultLabel)
-        phoneSounds?.forEach { add(it.uri to it.title) }
-        add(Sounds.SILENT to silentLabel)
-    }.distinctBy { it.first } // never show the same entry twice
+    val appSoundTitles = Sounds.APP_SOUNDS.map { stringResource(it.title) }
+    val appHeader = stringResource(R.string.sound_group_app)
+    val phoneHeader = stringResource(R.string.sound_group_phone)
+    val rows: List<PickerRow> = buildList {
+        if (allowAppDefault) add(PickerRow.Choice(null, appDefaultLabel))
+        add(PickerRow.Header(appHeader))
+        Sounds.APP_SOUNDS.forEachIndexed { i, sound -> add(PickerRow.Choice(sound.id, appSoundTitles[i])) }
+        add(PickerRow.Header(phoneHeader))
+        add(PickerRow.Choice(Sounds.PHONE_DEFAULT, phoneDefaultLabel))
+        phoneSounds?.forEach { add(PickerRow.Choice(it.uri, it.title)) }
+        add(PickerRow.Choice(Sounds.SILENT, silentLabel))
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (phoneSounds == null) LinearProgressIndicator(Modifier.fillMaxWidth())
                 LazyColumn(Modifier.heightIn(max = 360.dp).selectableGroup()) {
-                    items(options) { (uri, label) ->
-                        val isSelected = uri == selected
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 48.dp)
-                                .selectable(selected = isSelected, role = Role.RadioButton) {
-                                    selected = uri
-                                    preview.play(uri ?: defaultSound)
+                    items(rows) { row ->
+                        when (row) {
+                            is PickerRow.Header -> Text(
+                                row.text,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(start = 4.dp, top = 12.dp, bottom = 4.dp)
+                                    .semantics { heading() },
+                            )
+                            is PickerRow.Choice -> {
+                                val isSelected = row.id == selected
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 48.dp)
+                                        .selectable(selected = isSelected, role = Role.RadioButton) {
+                                            selected = row.id
+                                            preview.play(row.id ?: defaultSound)
+                                        }
+                                        .padding(horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    RadioButton(selected = isSelected, onClick = null)
+                                    Text(row.label, modifier = Modifier.padding(start = 16.dp))
                                 }
-                                .padding(horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = isSelected, onClick = null)
-                            Text(label, modifier = Modifier.padding(start = 16.dp))
+                            }
                         }
+                    }
+                    if (phoneSounds == null) {
+                        item { LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp)) }
                     }
                 }
                 Text(
