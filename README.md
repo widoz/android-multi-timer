@@ -8,6 +8,10 @@
 **Pasta on the stove, bread in the oven, laundry in the machine.** Multi Timer runs as many
 countdowns as you need, side by side, and each one rings with its own retro 8-bit alarm.
 
+<p align="center">
+  <img alt="The Multi Timer list in light and dark theme: four timers (Pasta and Focaccia running, Tea steep paused, Laundry ready) with progress rings, quick-start chips and a New timer button" src="docs/assets/app-preview.png" width="720">
+</p>
+
 ## Highlights
 
 - **Truly independent timers.** Start, pause, reset, edit or delete one without touching the others.
