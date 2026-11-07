@@ -27,6 +27,12 @@ start, pause, reset, add or remove a minute, edit or delete any of them without 
     briefly show the phone's theme. Android 12+ uses per-app night mode.
 - **Stack:** Kotlin, Jetpack Compose, Material 3. No third-party libraries.
 
+## Documentation
+
+- **Specs** (what the app does): [`openspec/specs`](openspec/specs), in [OpenSpec](https://github.com/Fission-AI/OpenSpec) format. Validate with `npx @fission-ai/openspec validate --specs --strict`.
+- **Architecture decisions** (why it is built this way): [`docs/adr`](docs/adr/README.md).
+- **Interactive mockup** (approve UI changes here first): [`docs/design/mockup.html`](docs/design/mockup.html).
+
 ## Open and run
 
 1. Open this folder in Android Studio (Ladybug or newer) with **File › Open**.

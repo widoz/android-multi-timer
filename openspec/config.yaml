@@ -1,0 +1,21 @@
+schema: spec-driven
+
+# Constraints that guide OpenSpec artifacts and cannot be inferred from the code.
+context: |
+  Multi Timer is a native Android app for running several independent countdown timers.
+  - Workflow: every user-visible change is first shown in the interactive HTML mockup
+    (docs/design/mockup.html) and approved by the product owner before Android code changes.
+  - Minimum Android 11 (API 30); behavior that differs by Android version must say so.
+  - Accessibility baseline is WCAG 2.2 AA in both light and dark themes.
+  - No third-party runtime libraries beyond AndroidX/Jetpack.
+  - Bundled sounds must be original or freely licensed; never phone-manufacturer sounds.
+  - Signing keys and keystore.properties must never be committed.
+  - Architectural decisions are recorded as ADRs in docs/adr.
+
+rules:
+  proposal:
+    - Reference the mockup change that was approved, or state why none was needed
+    - Link any ADR that the change adds, supersedes or relies on
+  specs:
+    - State the Android versions a requirement applies to when it is version-specific
+    - Include light and dark theme expectations for any new color
