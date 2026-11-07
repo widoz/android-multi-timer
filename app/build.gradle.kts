@@ -23,8 +23,8 @@ android {
         applicationId = "dev.multitimer.app"
         minSdk = 33 // Android 13
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.2.1"
     }
 
     signingConfigs {

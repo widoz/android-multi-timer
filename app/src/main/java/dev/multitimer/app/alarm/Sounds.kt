@@ -27,20 +27,32 @@ object Sounds {
 
     data class Option(val uri: String, val title: String)
 
-    /** The phone's alarm sounds, as listed by the system. Call off the main thread. */
-    fun alarmSounds(context: Context): List<Option> = runCatching {
+    /**
+     * The phone's alarm sounds, one entry per name. Call off the main thread.
+     *
+     * The media library often holds the same sound more than once (system and device
+     * storage, leftovers from updates), each with its own URI, so entries are merged by
+     * name. When a duplicate is one of [keep] (sounds already chosen), that copy is kept so
+     * the saved choice still shows as selected.
+     */
+    fun alarmSounds(context: Context, keep: Set<String> = emptySet()): List<Option> = runCatching {
         val manager = RingtoneManager(context).apply { setType(RingtoneManager.TYPE_ALARM) }
         val cursor = manager.cursor // managed by RingtoneManager: must not be closed
-        buildList {
+        val all = buildList {
             while (cursor.moveToNext()) {
                 add(
                     Option(
                         uri = manager.getRingtoneUri(cursor.position).toString(),
-                        title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX),
+                        title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX).orEmpty().trim(),
                     )
                 )
             }
-        }.distinctBy { it.uri }
+        }
+        all.filter { it.title.isNotEmpty() }
+            .groupBy { it.title.lowercase() }
+            .values
+            .map { copies -> copies.firstOrNull { it.uri in keep } ?: copies.first() }
+            .sortedBy { it.title.lowercase() }
     }.getOrDefault(emptyList())
 
     /** Display name for a stored sound. May query the media store: prefer a background thread. */
