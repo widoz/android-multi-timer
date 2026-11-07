@@ -1,5 +1,6 @@
 package dev.multitimer.app.ui.theme
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -7,6 +8,8 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
@@ -115,9 +118,12 @@ private val TimerColorsDark = listOf(
 
 const val TIMER_COLOR_COUNT = 5
 
+/** Whether the app is showing its dark theme (may differ from the phone's on Android 11). */
+val LocalDarkTheme = staticCompositionLocalOf { false }
+
 @Composable
 fun timerColor(index: Int): Color {
-    val list = if (isSystemInDarkTheme()) TimerColorsDark else TimerColorsLight
+    val list = if (LocalDarkTheme.current) TimerColorsDark else TimerColorsLight
     return list[index.mod(list.size)]
 }
 
@@ -132,11 +138,14 @@ fun MultiTimerTheme(
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
+    val useDynamic = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S // Android 12+
     val scheme = when {
-        dynamicColor && darkTheme -> dynamicDarkColorScheme(context)
-        dynamicColor -> dynamicLightColorScheme(context)
+        useDynamic && darkTheme -> dynamicDarkColorScheme(context)
+        useDynamic -> dynamicLightColorScheme(context)
         darkTheme -> Dark
         else -> Light
     }
-    MaterialTheme(colorScheme = scheme, content = content)
+    CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+        MaterialTheme(colorScheme = scheme, content = content)
+    }
 }

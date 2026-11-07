@@ -1,6 +1,7 @@
 package dev.multitimer.app.ui
 
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -111,7 +112,8 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
         if (granted) TimerRepository.reconcile()
     }
     LaunchedEffect(Unit) {
-        if (!notificationsAllowed) {
+        // The prompt exists on Android 13+; older versions have notifications on by default.
+        if (!notificationsAllowed && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
     }

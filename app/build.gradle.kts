@@ -21,10 +21,10 @@ android {
 
     defaultConfig {
         applicationId = "dev.multitimer.app"
-        minSdk = 33 // Android 13
+        minSdk = 30 // Android 11
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.2.2"
+        versionCode = 5
+        versionName = "0.3.0"
     }
 
     signingConfigs {
