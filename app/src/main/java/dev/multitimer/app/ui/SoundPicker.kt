@@ -64,7 +64,8 @@ fun SoundPickerDialog(
     val context = LocalContext.current
     val defaultSound by AppSettings.defaultSound.collectAsStateWithLifecycle()
     val phoneSounds by produceState<List<Sounds.Option>?>(initialValue = null) {
-        value = withContext(Dispatchers.IO) { Sounds.alarmSounds(context) }
+        val keep = setOfNotNull(current, defaultSound)
+        value = withContext(Dispatchers.IO) { Sounds.alarmSounds(context, keep) }
     }
     val appDefaultLabel = stringResource(R.string.app_default, rememberSoundTitle(defaultSound))
     val phoneDefaultLabel = stringResource(R.string.sound_phone_default)
@@ -79,7 +80,7 @@ fun SoundPickerDialog(
         add(Sounds.PHONE_DEFAULT to phoneDefaultLabel)
         phoneSounds?.forEach { add(it.uri to it.title) }
         add(Sounds.SILENT to silentLabel)
-    }
+    }.distinctBy { it.first } // never show the same entry twice
 
     AlertDialog(
         onDismissRequest = onDismiss,
