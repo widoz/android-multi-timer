@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.core.content.edit
 import dev.multitimer.app.R
 import dev.multitimer.app.alarm.AlarmScheduler
+import dev.multitimer.app.alarm.AlarmService
 import dev.multitimer.app.alarm.TimerNotifier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -141,6 +142,11 @@ object TimerRepository {
         _timers.value.filter { it.state == TimerState.RUNNING && it.endAt <= now }.forEach { finish(it.id) }
     }
 
+    /** Stops every ringing timer (the ringing notification's Stop / Stop all). */
+    fun stopRinging() {
+        _timers.value.filter { it.state == TimerState.FINISHED }.forEach { reset(it.id) }
+    }
+
     fun pauseAll() {
         _timers.value.filter { it.state == TimerState.RUNNING }.forEach { pause(it.id) }
     }
@@ -185,6 +191,7 @@ object TimerRepository {
     }
 
     private fun sideEffects(t: TimerItem) {
+        if (t.state == TimerState.FINISHED) AlarmService.start(app) // plays the sound
         if (t.state == TimerState.RUNNING) AlarmScheduler.schedule(app, t) else AlarmScheduler.cancel(app, t.id)
         TimerNotifier.sync(app, t)
     }

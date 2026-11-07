@@ -92,8 +92,14 @@
 
     <string name="channel_running">Running timers</string>
     <string name="channel_running_desc">Shows each running or paused timer with quick controls.</string>
-    <string name="channel_alarm_named">Finished timers · %1$s</string>
-    <string name="channel_alarm_desc">Rings when a timer reaches zero.</string>
+    <string name="channel_alarm">Finished timers</string>
+    <string name="ringing_one">%1$s is done</string>
+    <plurals name="ringing_many">
+        <item quantity="one">%d timer done</item>
+        <item quantity="other">%d timers done</item>
+    </plurals>
+    <string name="stop_all">Stop all</string>
+    <string name="channel_alarm_desc">Shows and vibrates when a timer reaches zero. The sound follows the alarm volume.</string>
     <string name="notif_paused">Paused · %1$s left</string>
     <string name="notif_done">Time\'s up · %1$s timer</string>
 </resources>

@@ -15,7 +15,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import dev.multitimer.app.MainActivity
 import dev.multitimer.app.R
-import dev.multitimer.app.data.AppSettings
 import dev.multitimer.app.data.TimerItem
 import dev.multitimer.app.data.TimerState
 import dev.multitimer.app.data.formatClock
@@ -26,11 +25,15 @@ import java.util.Date
  * One notification per timer, using the timer id as notification id:
  * - running: silent, ongoing, with a live system countdown (no service needed)
  * - paused: silent, ongoing, with Resume
- * - finished: high priority, alarm sound repeating until stopped
+ * - finished: covered by AlarmService's single "ringing" notification, which plays the
+ *   sound itself. Only if the service could not start does each finished timer get its
+ *   own (vibrating) notification.
  */
 object TimerNotifier {
     private const val CHANNEL_RUNNING = "running"
+    private const val CHANNEL_RINGING = "ringing"
     private const val LEGACY_CHANNEL_ALARM = "alarm"
+    private const val LEGACY_SOUND_CHANNEL_PREFIX = "alarm_"
 
     fun createChannels(context: Context) {
         val running = NotificationChannel(
@@ -41,15 +44,29 @@ object TimerNotifier {
             description = context.getString(R.string.channel_running_desc)
             setShowBadge(false)
         }
+        // No sound here: AlarmService plays it on the alarm stream. Vibrates until stopped.
+        val ringing = NotificationChannel(
+            CHANNEL_RINGING,
+            context.getString(R.string.channel_alarm),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = context.getString(R.string.channel_alarm_desc)
+            setSound(null, null)
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 600, 400, 600)
+        }
         val nm = context.getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(running)
-        // 0.1.0 used one "alarm" channel; finished timers now use a channel per sound.
-        nm.deleteNotificationChannel(LEGACY_CHANNEL_ALARM)
+        nm.createNotificationChannels(listOf(running, ringing))
+        // Older versions played the sound through notification channels: remove them.
+        nm.notificationChannels
+            .filter { it.id == LEGACY_CHANNEL_ALARM || it.id.startsWith(LEGACY_SOUND_CHANNEL_PREFIX) }
+            .forEach { nm.deleteNotificationChannel(it.id) }
     }
 
     fun sync(context: Context, t: TimerItem) {
         when {
-            t.state == TimerState.FINISHED -> post(context, t.id, finished(context, t))
+            t.state == TimerState.FINISHED ->
+                if (AlarmService.active) cancel(context, t.id) else post(context, t.id, finished(context, t))
             t.state == TimerState.RUNNING -> post(context, t.id, running(context, t))
             t.isReady -> cancel(context, t.id)
             else -> post(context, t.id, paused(context, t))
@@ -103,7 +120,7 @@ object TimerNotifier {
             .build()
 
     private fun finished(context: Context, t: TimerItem): Notification =
-        base(context, t, Sounds.alarmChannelId(context, t.soundUri ?: AppSettings.defaultSound.value))
+        base(context, t, CHANNEL_RINGING)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setContentText(context.getString(R.string.notif_done, formatDuration(t.totalMs)))
@@ -111,6 +128,44 @@ object TimerNotifier {
             .addAction(0, context.getString(R.string.add_minute), action(context, t.id, TimerActionReceiver.ACTION_ADD_MINUTE))
             .build()
             .apply { flags = flags or Notification.FLAG_INSISTENT } // keep ringing until handled
+
+    /** AlarmService's notification: one for all ringing timers. */
+    fun ringing(context: Context, timers: List<TimerItem>): Notification {
+        val single = timers.singleOrNull()
+        val title = if (single != null) {
+            context.getString(R.string.ringing_one, single.label)
+        } else {
+            context.resources.getQuantityString(R.plurals.ringing_many, timers.size, timers.size)
+        }
+        val text = if (single != null) {
+            context.getString(R.string.notif_done, formatDuration(single.totalMs))
+        } else {
+            timers.joinToString(", ") { it.label }
+        }
+        val builder = NotificationCompat.Builder(context, CHANNEL_RINGING)
+            .setSmallIcon(R.drawable.ic_stat_timer)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setContentIntent(openApp(context))
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setOngoing(true)
+            .addAction(
+                0,
+                context.getString(if (single != null) R.string.stop else R.string.stop_all),
+                action(context, STOP_ALL_REQUEST, TimerActionReceiver.ACTION_STOP_ALL),
+            )
+        if (single != null) {
+            builder.addAction(
+                0,
+                context.getString(R.string.add_minute),
+                action(context, single.id, TimerActionReceiver.ACTION_ADD_MINUTE),
+            )
+        }
+        return builder.build().apply { flags = flags or Notification.FLAG_INSISTENT } // keep vibrating
+    }
+
+    private const val STOP_ALL_REQUEST = -1
 
     private fun action(context: Context, timerId: Int, action: String): PendingIntent =
         PendingIntent.getBroadcast(
