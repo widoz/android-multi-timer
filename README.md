@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+  <img alt="Multi Timer: many countdowns at once, with retro 8-bit alarms" src="docs/assets/banner-light.svg" width="100%">
+</picture>
+
 # Multi Timer
 
 An Android app for running several countdown timers at once. Each timer is independent:
