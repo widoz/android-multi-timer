@@ -86,13 +86,15 @@ fun TimerCard(
     val fraction = if (timer.totalMs > 0) (remaining.toFloat() / timer.totalMs).coerceIn(0f, 1f) else 0f
     val accent = if (finished) scheme.error else timerColor(timer.colorIndex)
 
-    val status = when {
+    val baseStatus = when {
         finished -> stringResource(R.string.status_done)
         timer.state == TimerState.RUNNING ->
             stringResource(R.string.status_ends, DateFormat.getTimeFormat(context).format(Date(timer.endAt)))
         timer.isReady -> stringResource(R.string.status_ready, formatDuration(timer.totalMs))
         else -> stringResource(R.string.status_paused, formatDuration(timer.totalMs))
     }
+    val ownSound = timer.soundUri?.let { rememberSoundTitle(it) }
+    val status = if (ownSound.isNullOrEmpty()) baseStatus else stringResource(R.string.status_with_sound, baseStatus, ownSound)
 
     Card(
         modifier = modifier,

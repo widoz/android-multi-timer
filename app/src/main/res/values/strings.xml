@@ -27,7 +27,25 @@
     <string name="save">Save</string>
     <string name="undo">Undo</string>
 
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
+    <string name="appearance">Appearance</string>
+    <string name="alarms">Alarms</string>
     <string name="theme">Theme</string>
+    <string name="theme_system_desc">Follows the phone\'s setting</string>
+    <string name="default_sound">Default sound</string>
+    <string name="default_sound_hint">Every timer uses this sound unless you choose a different one for it.</string>
+    <string name="default_alarm_sound">Default alarm sound</string>
+    <string name="sound">Sound</string>
+    <string name="timer_sound">Timer sound</string>
+    <string name="sound_row_cd">Sound: %1$s</string>
+    <string name="app_default">App default (%1$s)</string>
+    <string name="sound_phone_default">Phone\'s alarm sound</string>
+    <string name="sound_silent">Silent (vibrate only)</string>
+    <string name="sound_unknown">Unavailable sound</string>
+    <string name="sound_preview_hint">Tap a sound to hear it.</string>
+    <string name="status_with_sound">%1$s · %2$s</string>
+    <string name="ok">OK</string>
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
@@ -74,7 +92,7 @@
 
     <string name="channel_running">Running timers</string>
     <string name="channel_running_desc">Shows each running or paused timer with quick controls.</string>
-    <string name="channel_alarm">Finished timers</string>
+    <string name="channel_alarm_named">Finished timers · %1$s</string>
     <string name="channel_alarm_desc">Rings when a timer reaches zero.</string>
     <string name="notif_paused">Paused · %1$s left</string>
     <string name="notif_done">Time\'s up · %1$s timer</string>

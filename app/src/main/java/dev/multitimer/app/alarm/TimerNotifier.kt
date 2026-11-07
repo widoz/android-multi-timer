@@ -9,15 +9,13 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.AudioAttributes
-import android.media.RingtoneManager
-import android.provider.Settings
 import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import dev.multitimer.app.MainActivity
 import dev.multitimer.app.R
+import dev.multitimer.app.data.AppSettings
 import dev.multitimer.app.data.TimerItem
 import dev.multitimer.app.data.TimerState
 import dev.multitimer.app.data.formatClock
@@ -32,7 +30,7 @@ import java.util.Date
  */
 object TimerNotifier {
     private const val CHANNEL_RUNNING = "running"
-    private const val CHANNEL_ALARM = "alarm"
+    private const val LEGACY_CHANNEL_ALARM = "alarm"
 
     fun createChannels(context: Context) {
         val running = NotificationChannel(
@@ -43,26 +41,10 @@ object TimerNotifier {
             description = context.getString(R.string.channel_running_desc)
             setShowBadge(false)
         }
-        val alarm = NotificationChannel(
-            CHANNEL_ALARM,
-            context.getString(R.string.channel_alarm),
-            NotificationManager.IMPORTANCE_HIGH,
-        ).apply {
-            description = context.getString(R.string.channel_alarm_desc)
-            val sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: Settings.System.DEFAULT_NOTIFICATION_URI
-            setSound(
-                sound,
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build(),
-            )
-            enableVibration(true)
-            vibrationPattern = longArrayOf(0, 600, 400, 600)
-        }
-        context.getSystemService(NotificationManager::class.java)
-            .createNotificationChannels(listOf(running, alarm))
+        val nm = context.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(running)
+        // 0.1.0 used one "alarm" channel; finished timers now use a channel per sound.
+        nm.deleteNotificationChannel(LEGACY_CHANNEL_ALARM)
     }
 
     fun sync(context: Context, t: TimerItem) {
@@ -121,7 +103,7 @@ object TimerNotifier {
             .build()
 
     private fun finished(context: Context, t: TimerItem): Notification =
-        base(context, t, CHANNEL_ALARM)
+        base(context, t, Sounds.alarmChannelId(context, t.soundUri ?: AppSettings.defaultSound.value))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setContentText(context.getString(R.string.notif_done, formatDuration(t.totalMs)))

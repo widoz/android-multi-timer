@@ -123,7 +123,7 @@ fun timerColor(index: Int): Color {
 
 /**
  * [darkTheme] follows the app's night mode, which the in-app Theme menu sets through
- * UiModeManager (see ThemeSettings). Set [dynamicColor] to true for wallpaper colors.
+ * UiModeManager (see AppSettings). Set [dynamicColor] to true for wallpaper colors.
  */
 @Composable
 fun MultiTimerTheme(

@@ -6,7 +6,11 @@ start, pause, reset, add or remove a minute, edit or delete any of them without 
 - **Edit** reuses the new-timer panel. Label and color change in place; a new duration restarts
   the timer, after a confirmation if it had already counted some time.
 - **Delete** asks for confirmation, then offers Undo for a few seconds.
-- **Theme**: the top-bar menu picks System default, Light or Dark.
+- **Settings** (gear icon): Theme (System default, Light, Dark) and the default alarm sound.
+- **Sounds**: each timer uses the default sound unless you pick its own in the New/Edit panel.
+  The list shows the phone's alarm sounds plus "Phone's alarm sound" and "Silent"; tap one to
+  preview it. A notification channel's sound is fixed once created, so each sound gets its own
+  "Finished timers · <sound>" channel the first time it rings (`alarm/Sounds.kt`).
 
 - **Min Android version:** 13 (API 33). Targets API 35.
 - **Stack:** Kotlin, Jetpack Compose, Material 3. No third-party libraries.
@@ -54,8 +58,8 @@ The signed APK lands in `app/build/outputs/apk/release/app-release.apk`. Without
 
 - Light is white, dark uses Material's neutral greys (`#121212`, cards `#1E1E1E`). Controls are
   neutral; color is reserved for each timer's color and the orange of a finished timer.
-- The Theme menu calls `UiModeManager.setApplicationNightMode` (Android 12+), so the status bar,
-  startup window and dialogs follow the choice too (`data/ThemeSettings.kt`).
+- The Theme setting calls `UiModeManager.setApplicationNightMode` (Android 12+), so the status bar,
+  startup window and dialogs follow the choice too (`data/AppSettings.kt`).
 - Colors meet WCAG 2.2 AA in both themes: text >= 4.5:1, control outlines and timer colors >= 3:1.
   In `ui/theme/Theme.kt`, `outline` is used for every border and line and must stay >= 3:1;
   `outlineVariant` is only the progress-ring track.
