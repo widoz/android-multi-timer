@@ -92,21 +92,24 @@ class AlarmService : Service() {
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, type)
     }
 
-    private fun play(uri: String) {
+    private fun play(sound: String) {
         stopPlayback()
-        playingUri = uri
-        if (uri == Sounds.SILENT) return // vibration comes from the notification
+        playingUri = sound
+        if (sound == Sounds.SILENT) return // vibration comes from the notification
+        // If the chosen sound cannot play (e.g. a phone sound was deleted), fall back to
+        // Power chime, which ships with the app, then to the phone's alarm sounds.
         val candidates = listOfNotNull(
-            if (uri == Sounds.PHONE_DEFAULT) null else uri,
-            Sounds.PHONE_DEFAULT,
-            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)?.toString(),
-            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)?.toString(),
+            Sounds.playableUri(this, sound),
+            Sounds.playableUri(this, Sounds.DEFAULT),
+            Sounds.PHONE_DEFAULT.toUri(),
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
         ).distinct()
         for (candidate in candidates) {
             val started = runCatching {
                 MediaPlayer().apply {
                     setAudioAttributes(ALARM_ATTRIBUTES)
-                    setDataSource(this@AlarmService, candidate.toUri())
+                    setDataSource(this@AlarmService, candidate)
                     isLooping = true
                     prepare()
                     start()

@@ -40,6 +40,13 @@
     <string name="timer_sound">Timer sound</string>
     <string name="sound_row_cd">Sound: %1$s</string>
     <string name="app_default">App default (%1$s)</string>
+    <string name="sound_group_app">App sounds</string>
+    <string name="sound_group_phone">Phone sounds</string>
+    <string name="sound_power_chime">Power chime</string>
+    <string name="sound_pixel_bell">Pixel bell</string>
+    <string name="sound_beeper">Beeper</string>
+    <string name="sound_gentle_rise">Gentle rise</string>
+    <string name="sound_jingle">Jingle</string>
     <string name="sound_phone_default">Phone\'s alarm sound</string>
     <string name="sound_silent">Silent (vibrate only)</string>
     <string name="sound_unknown">Unavailable sound</string>
