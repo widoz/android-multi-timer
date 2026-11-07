@@ -9,8 +9,11 @@ start, pause, reset, add or remove a minute, edit or delete any of them without 
 - **Settings** (gear icon): Theme (System default, Light, Dark) and the default alarm sound.
 - **Sounds**: each timer uses the default sound unless you pick its own in the New/Edit panel.
   The list shows the phone's alarm sounds plus "Phone's alarm sound" and "Silent"; tap one to
-  preview it. A notification channel's sound is fixed once created, so each sound gets its own
-  "Finished timers · <sound>" channel the first time it rings (`alarm/Sounds.kt`).
+  preview it.
+- **Ringing**: `alarm/AlarmService.kt` plays the sound itself on the alarm stream (alarm volume),
+  looping until stopped, like a clock app. Notification sounds can be muted by the phone's sound
+  mode or Do Not Disturb, so they are not used. One "ringing" notification covers all finished
+  timers, with Stop / +1 min (or Stop all).
 
 - **Min Android version:** 13 (API 33). Targets API 35.
 - **Stack:** Kotlin, Jetpack Compose, Material 3. No third-party libraries.

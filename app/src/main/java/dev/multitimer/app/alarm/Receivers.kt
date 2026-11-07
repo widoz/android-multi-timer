@@ -14,10 +14,14 @@ class TimerAlarmReceiver : BroadcastReceiver() {
     }
 }
 
-/** Buttons on the notifications: pause/resume, +1 min, reset/stop. */
+/** Buttons on the notifications: pause/resume, +1 min, reset/stop, stop all ringing. */
 class TimerActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         TimerRepository.init(context)
+        if (intent.action == ACTION_STOP_ALL) {
+            TimerRepository.stopRinging()
+            return
+        }
         val id = intent.getIntExtra(AlarmScheduler.EXTRA_TIMER_ID, -1)
         if (id < 0) return
         when (intent.action) {
@@ -31,6 +35,7 @@ class TimerActionReceiver : BroadcastReceiver() {
         const val ACTION_TOGGLE = "dev.multitimer.app.action.TOGGLE"
         const val ACTION_ADD_MINUTE = "dev.multitimer.app.action.ADD_MINUTE"
         const val ACTION_RESET = "dev.multitimer.app.action.RESET"
+        const val ACTION_STOP_ALL = "dev.multitimer.app.action.STOP_ALL"
     }
 }
 
