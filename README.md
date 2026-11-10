@@ -18,6 +18,8 @@ countdowns as you need, side by side, and each one rings with its own retro 8-bi
 - **Quick to use.** One-tap chips for 1, 5, 10, 20 and 30 minutes and 1 hour; ±1 minute on every card.
 - **Rings when it matters.** Timers finish on time with the app closed and the phone locked, and
   they ring even when your phone is set to vibrate.
+- **Full screen.** Show one timer big, with the screen kept on; timers that end meanwhile slide up
+  from the bottom, one swipeable card each, to stop separately.
 - **Control from the notification shade.** Each timer shows a live countdown with Pause, +1 min and Reset.
 - **Five original 8-bit sounds.** Power chime, Pixel bell, Beeper, Gentle rise and Jingle, or any
   of your phone's alarm sounds, chosen per timer.

@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -63,7 +64,7 @@ import dev.multitimer.app.ui.theme.timerColor
 import java.util.Date
 import kotlin.math.ceil
 
-private val ClockStyle = TextStyle(
+internal val ClockStyle = TextStyle(
     fontFamily = FontFamily.Monospace,
     fontWeight = FontWeight.Medium,
     fontSize = 26.sp,
@@ -77,6 +78,7 @@ fun TimerCard(
     now: Long,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onFullScreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -86,15 +88,7 @@ fun TimerCard(
     val fraction = if (timer.totalMs > 0) (remaining.toFloat() / timer.totalMs).coerceIn(0f, 1f) else 0f
     val accent = if (finished) scheme.error else timerColor(timer.colorIndex)
 
-    val baseStatus = when {
-        finished -> stringResource(R.string.status_done)
-        timer.state == TimerState.RUNNING ->
-            stringResource(R.string.status_ends, DateFormat.getTimeFormat(context).format(Date(timer.endAt)))
-        timer.isReady -> stringResource(R.string.status_ready, formatDuration(timer.totalMs))
-        else -> stringResource(R.string.status_paused, formatDuration(timer.totalMs))
-    }
-    val ownSound = timer.soundUri?.let { rememberSoundTitle(it) }
-    val status = if (ownSound.isNullOrEmpty()) baseStatus else stringResource(R.string.status_with_sound, baseStatus, ownSound)
+    val status = timerStatus(timer, now)
 
     Card(
         modifier = modifier,
@@ -152,6 +146,15 @@ fun TimerCard(
                     )
                 }
 
+                // Full screen sits beside start/pause: the bottom row is full on 360dp phones.
+                IconButton(onClick = onFullScreen) {
+                    Icon(
+                        Icons.Filled.OpenInFull,
+                        contentDescription = stringResource(R.string.full_screen),
+                        modifier = Modifier.size(20.dp),
+                        tint = scheme.onSurfaceVariant,
+                    )
+                }
                 val (icon, desc) = when (timer.state) {
                     TimerState.FINISHED -> Icons.Filled.Stop to R.string.stop
                     TimerState.RUNNING -> Icons.Filled.Pause to R.string.pause
@@ -202,7 +205,7 @@ fun TimerCard(
 
 /** One line of text that steps its font size down until it fits, never below [minSize]. */
 @Composable
-private fun ShrinkToFitText(
+internal fun ShrinkToFitText(
     text: String,
     style: TextStyle,
     color: Color,
@@ -220,6 +223,21 @@ private fun ShrinkToFitText(
             if (result.didOverflowWidth && fontSize > minSize) fontSize = fontSize * 0.9f
         },
     )
+}
+
+/** "Ends at 6:58 PM · Bell", "Paused · of 5 min", "Ready · 45 min" or "Time's up". */
+@Composable
+internal fun timerStatus(timer: TimerItem, now: Long): String {
+    val context = LocalContext.current
+    val base = when {
+        timer.state == TimerState.FINISHED -> stringResource(R.string.status_done)
+        timer.state == TimerState.RUNNING ->
+            stringResource(R.string.status_ends, DateFormat.getTimeFormat(context).format(Date(timer.endAt)))
+        timer.isReady -> stringResource(R.string.status_ready, formatDuration(timer.totalMs))
+        else -> stringResource(R.string.status_paused, formatDuration(timer.totalMs))
+    }
+    val ownSound = timer.soundUri?.let { rememberSoundTitle(it) }
+    return if (ownSound.isNullOrEmpty()) base else stringResource(R.string.status_with_sound, base, ownSound)
 }
 
 @Composable

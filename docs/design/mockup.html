@@ -163,7 +163,7 @@ body {
 
 /* undo snackbar */
 .snack {
-  position: absolute; left: 16px; right: 16px; bottom: 96px; z-index: 6;
+  position: absolute; left: 16px; right: 16px; bottom: 96px; z-index: 8;
   background: var(--ink); color: var(--surface); border-radius: 8px; padding: 10px 8px 10px 16px;
   display: flex; align-items: center; gap: 8px; font-size: 14px;
 }
@@ -214,6 +214,68 @@ body {
 .sgroup { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); padding: 12px 8px 4px; }
 .sphone { font-size: 13px; color: var(--muted); padding: 0 8px 8px 50px; }
 #soundDlg { z-index: 15; }
+
+.topbtns { display: flex; align-items: center; gap: 2px; }
+.topbtns .iconbtn { color: var(--muted); }
+/* full-screen timer */
+.fs { position: absolute; left: 0; right: 0; bottom: 0; top: 34px; z-index: 7; background: var(--surface); color: var(--ink); display: flex; flex-direction: column; }
+.fs-main { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; padding: 6px 20px 22px; gap: 10px; }
+.fs-top { align-self: stretch; display: flex; align-items: center; gap: 6px; }
+.fs-label { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 500; min-width: 0; }
+.fs-label span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot.big { width: 10px; height: 10px; border-radius: 5px; background: var(--c); flex: none; }
+.fs-dial { flex: 1; min-height: 0; width: 100%; position: relative; display: grid; place-items: center; container-type: size; }
+.fs-dial svg { width: min(300px, 100cqmin); height: min(300px, 100cqmin); transform: rotate(-90deg); }
+.fs-dial .track { stroke: var(--line); }
+.fs-dial .arc { stroke: var(--c); transition: stroke-dashoffset .25s linear; }
+.fs-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 2px; }
+.fs-time { font: 500 clamp(28px, 17cqmin, 58px) var(--font-mono); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.fs-state { font-size: 14px; color: var(--muted); }
+.fs.done-main .arc { stroke: var(--done); }
+.fs.done-main .fs-time { color: var(--done); }
+.fs-controls { display: flex; align-items: center; gap: 18px; }
+.fs-controls .step { padding: 10px 16px; font-size: 15px; border-radius: 12px; }
+.fs-play { width: 72px; height: 72px; border-radius: 24px; border: 0; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; cursor: pointer; }
+.fs-play.paused { background: var(--primary-soft); color: var(--primary); }
+.fs.done-main .fs-play { background: var(--done); color: var(--card); }
+.fs-play svg { width: 34px; height: 34px; fill: currentColor; }
+/* tray of finished timers, slides up from the bottom */
+.tray { flex: none; max-height: 0; overflow: hidden; border-top: 1px solid transparent; transition: max-height .35s ease, border-color .35s; }
+.tray.open { max-height: 240px; border-top-color: var(--outline); }
+.tray-head { display: flex; align-items: center; gap: 2px; padding: 8px 10px 2px 20px; }
+.tray-head b { flex: 1; font-size: 14px; font-weight: 600; }
+.tray-track { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 20px 6px; scroll-padding: 0 20px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.tray-track::-webkit-scrollbar { display: none; }
+.slide { flex: 0 0 calc(100% - 26px); scroll-snap-align: start; background: var(--done-soft); border: 1px solid var(--done); border-radius: 18px; padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; }
+.tray-track .slide:only-child { flex-basis: 100%; }
+.slide-name { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; min-width: 0; }
+.slide-name span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slide-time { grid-row: span 2; font: 500 26px var(--font-mono); color: var(--done); font-variant-numeric: tabular-nums; }
+.slide-sub { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.slide-actions { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 8px; }
+.slide-actions .btn { padding: 8px 18px; }
+.btn.stop { background: var(--done); color: var(--card); font-weight: 600; }
+.btn.more { background: transparent; color: var(--ink); border: 1px solid var(--done); }
+.tray-dots { display: flex; justify-content: center; padding: 0 0 8px; }
+.tray-dots button { width: 24px; height: 24px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.tray-dots button::after { content: ""; width: 8px; height: 8px; border-radius: 4px; background: var(--outline); transition: width .2s; }
+.tray-dots button[aria-current="true"]::after { width: 18px; background: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .tray, .tray-dots button::after, .fs-dial .arc { transition: none; } }
+/* on/off switch (Settings) */
+.switch { position: relative; flex: none; width: 52px; height: 32px; border-radius: 16px; border: 2px solid var(--outline); transition: background .2s, border-color .2s; }
+.switch::after { content: ""; position: absolute; top: 6px; left: 6px; width: 16px; height: 16px; border-radius: 8px; background: var(--outline); transition: all .2s; }
+[aria-checked="true"] > .switch { background: var(--primary); border-color: var(--primary); }
+[aria-checked="true"] > .switch::after { top: 2px; left: 22px; width: 24px; height: 24px; border-radius: 12px; background: var(--on-primary); }
+.fs-top .spacer { flex: 1; }
+.screen.fs-open .snack { top: 96px; bottom: auto; } /* in full screen, keep messages clear of the controls and tray */
+#fsKeepOn { color: var(--muted); }
+#fsKeepOn[aria-pressed="true"] { color: var(--ink); background: var(--primary-soft); }
+@media (prefers-reduced-motion: reduce) { .switch, .switch::after { transition: none; } }
+/* demo controls beside the phone */
+.demo { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 8px; }
+.demo button { border: 1px solid var(--page-muted); background: transparent; color: var(--page-ink); border-radius: 10px; padding: 9px 14px; font: 500 14px var(--font-ui); cursor: pointer; }
+.demo button:hover { border-color: var(--page-ink); }
+.badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--page-muted); border-radius: 6px; padding: 1px 6px; margin-left: 8px; vertical-align: middle; }
 
 /* notification banner */
 .banner {
@@ -326,6 +388,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
           <button type="button" class="setrow" id="defSoundBtn"><span>Default sound<small id="defSoundVal">Chime</small></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
           <p class="sethint">Every timer uses this sound unless you choose a different one for it.</p>
         </div>
+        <div class="setsec">
+          <h3>Full screen</h3>
+          <button type="button" class="setrow" id="keepOnSwitch" role="switch" aria-checked="true"><span>Keep screen on<small>While a timer is full screen, the screen doesn't turn off or lock.</small></span><span class="switch" aria-hidden="true"></span></button>
+        </div>
       </section>
 
       <div class="quick" role="group" aria-label="Quick start">
@@ -344,6 +410,42 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
         <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
         New timer
       </button>
+
+      <section class="fs" id="fullView" aria-labelledby="fsName" hidden>
+        <div class="fs-main">
+          <div class="fs-top">
+            <button class="iconbtn" id="fsExit" type="button" title="Exit full screen" aria-label="Exit full screen">
+              <svg viewBox="0 0 24 24"><path d="M22 3.41 16.71 8.7 20 12h-8V4l3.29 3.29L20.59 2zM2 20.59 7.29 15.3 4 12h8v8l-3.29-3.29L3.41 22z"/></svg>
+            </button>
+            <div class="fs-label"><span class="dot big"></span><span id="fsName"></span></div>
+            <span class="spacer"></span>
+            <button class="iconbtn" id="fsKeepOn" type="button" aria-label="Keep screen on" aria-pressed="true" title="Keep screen on">
+              <svg viewBox="0 0 24 24"><path d="M6.76 4.84 4.96 3.05 3.55 4.46l1.79 1.79zM4 10.5H1v2h3zm9-9.95h-2V3.5h2zm7.45 3.91-1.41-1.41-1.79 1.79 1.41 1.41zm-3.21 13.7 1.79 1.8 1.41-1.41-1.8-1.79zM20 10.5v2h3v-2zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2zm-7.45-3.91 1.41 1.41 1.79-1.8-1.41-1.41z"/></svg>
+            </button>
+          </div>
+          <div class="fs-dial">
+            <svg viewBox="0 0 240 240" aria-hidden="true">
+              <circle class="track" cx="120" cy="120" r="108" fill="none" stroke-width="12"/>
+              <circle class="arc" id="fsArc" cx="120" cy="120" r="108" fill="none" stroke-width="12" stroke-linecap="round"/>
+            </svg>
+            <div class="fs-center"><div class="fs-time" id="fsTime"></div><div class="fs-state" id="fsState"></div></div>
+          </div>
+          <div class="fs-controls">
+            <button class="step" type="button" id="fsMinus" aria-label="Remove 1 minute">−1 min</button>
+            <button class="fs-play" type="button" id="fsPlay"><svg viewBox="0 0 24 24"></svg></button>
+            <button class="step" type="button" id="fsPlus" aria-label="Add 1 minute">+1 min</button>
+          </div>
+        </div>
+        <div class="tray" id="tray" role="region" aria-label="Finished timers" inert>
+          <div class="tray-head">
+            <b id="trayTitle" aria-live="polite"></b>
+            <button class="iconbtn" id="trayPrev" type="button" aria-label="Previous finished timer"><svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+            <button class="iconbtn" id="trayNext" type="button" aria-label="Next finished timer"><svg viewBox="0 0 24 24"><path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+          </div>
+          <div class="tray-track" id="trayTrack"></div>
+          <div class="tray-dots" id="trayDots"></div>
+        </div>
+      </section>
 
       <div class="scrim" id="scrim" hidden></div>
       <form class="sheet" id="sheet" hidden>
@@ -409,6 +511,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
     <h2>Multi Timer for Android</h2>
     <p>Each timer runs on its own. Start, pause, reset, change, or delete any of them without touching the others. The sample timers on the left are live, and the 10-second chip lets you see what happens when one finishes.</p>
     <p class="hint">Tap anywhere first if you want to hear the alarm sound; browsers block audio until you interact.</p>
+
+    <h3>Full screen <span class="badge">New in 0.5.0</span></h3>
+    <p>The new icon on each card (four arrows, next to start/pause) shows that timer full screen: a big ring and countdown, with −1 min, start/pause and +1 min. The icon at the top left goes back to the list (Back does the same).</p>
+    <p>Other timers keep running. When one of them ends, the full-screen view shrinks from the bottom and a tray slides up with the finished timer, ringing. If several end, each gets its own card in the tray: swipe sideways (or use the arrows) and stop each one separately, or add a minute. When the last one is stopped, the tray closes and the timer grows back to full size. If the full-screen timer itself ends, it turns orange in place with a big Stop button.</p>
+    <p><b>Keep screen on</b> (Settings › Full screen, on by default): while a timer is full screen the screen doesn't turn off or lock. The sun icon at the top right of the full-screen view turns the same setting on or off without leaving the timer. In the app this uses Android's keep-screen-on flag, which needs no permission and only applies while the full-screen view is visible; this preview uses the browser's screen wake lock where allowed.</p>
+    <div class="demo">
+      <button type="button" id="demoOne">Finish another timer now</button>
+      <button type="button" id="demoThree">Finish 3 timers at once</button>
+    </div>
+    <p class="hint">The demo buttons open Focaccia full screen if nothing is full screen yet, then end other timers.</p>
 
     <h3>New in this version</h3>
     <ul>
@@ -528,7 +640,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
           <div class="time"></div>
           <div class="state"></div>
         </div>
-        <button class="play" type="button" data-act="toggle"><svg viewBox="0 0 24 24"></svg></button>
+        <div class="topbtns">
+          <button class="iconbtn" type="button" data-act="full" title="Full screen" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z"/></svg></button>
+          <button class="play" type="button" data-act="toggle"><svg viewBox="0 0 24 24"></svg></button>
+        </div>
         </div>
         <div class="bar">
           <button class="step" type="button" data-act="minus" aria-label="Remove 1 minute">−1 min</button>
@@ -549,7 +664,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
     let running = 0, ringing = 0;
     for (const t of timers) {
       const rem = remainingOf(t);
-      if (t.running && rem <= 0) { t.running = false; t.remaining = 0; t.done = true; }
+      if (t.running && rem <= 0) { t.running = false; t.remaining = 0; t.done = true; t.endedAt = Date.now(); }
       if (t.running) running++;
       if (t.done) ringing++;
       if (t.done && !t.rang) { t.rang = true; notify(t); }
@@ -560,10 +675,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
       el.querySelector(".arc").style.strokeDashoffset = C * (1 - frac);
       el.querySelector(".pct").textContent = t.done ? "0%" : Math.ceil(frac * 100) + "%";
       el.querySelector(".time").textContent = t.done ? "00:00" : fmt(rem);
-      el.querySelector(".state").textContent = (t.done ? "Time's up" :
-        t.running ? `Ends at ${endsAt(rem)}` :
-        rem === t.total ? `Ready · ${fmtTotal(t.total)}` : `Paused · of ${fmtTotal(t.total)}`)
-        + (t.sound ? ` · ${soundName(t.sound)}` : "");
+      el.querySelector(".state").textContent = stateText(t, rem);
       const btn = el.querySelector(".play");
       btn.classList.toggle("paused", !t.running && !t.done);
       const icon = t.done ? "stop" : t.running ? "pause" : "play";
@@ -572,6 +684,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
       el.querySelector('[data-act="minus"]').disabled = t.done || rem <= MINUTE;
     }
     $("summary").textContent = `${running} running · ${timers.length} total` + (ringing ? ` · ${ringing} ringing` : "");
+    updateFull();
     const ringingList = timers.filter(x => x.done);
     if (ringingList.length) ring(ringingList); else if (ringId) stopRing();
     const now = new Date();
@@ -628,6 +741,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
 
   let bannerFor = null, bannerTimer = null;
   function notify(t) {
+    if (fsId !== null) return; // in full screen the tray shows finished timers instead
     bannerFor = t.id;
     $("bannerTitle").textContent = `${t.name} is done`;
     $("bannerBody").textContent = `${fmtTotal(t.total)} timer · Multi Timer`;
@@ -645,27 +759,30 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
   function reset(t) { t.running = false; t.done = false; t.rang = false; t.remaining = t.total; t.endAt = null; }
   const MINUTE = 60000;
 
+  // Start/pause, +1 min and −1 min, shared by the cards, full screen and the tray.
+  function applyAct(t, act) {
+    if (act === "toggle") {
+      if (t.done) reset(t);
+      else if (t.running) { t.remaining = remainingOf(t); t.running = false; }
+      else { t.endAt = Date.now() + t.remaining; t.running = true; }
+    } else if (act === "plus") {
+      if (t.done) { t.done = false; t.rang = false; t.remaining = 60000; t.total += 60000; t.endAt = Date.now() + 60000; t.running = true; }
+      else { t.total += 60000; if (t.running) t.endAt += 60000; else t.remaining += 60000; }
+    } else if (act === "minus") {
+      const rem = remainingOf(t);
+      if (t.done || rem <= MINUTE) return;
+      if (t.running) t.endAt -= MINUTE; else t.remaining -= MINUTE;
+      t.total = Math.max(MINUTE, t.total - MINUTE);
+    }
+  }
+
   list.addEventListener("click", e => {
     const b = e.target.closest("button[data-act]"); if (!b) return;
     const id = +b.closest(".timer").dataset.id;
     const t = timers.find(x => x.id === id); if (!t) return;
     switch (b.dataset.act) {
-      case "toggle":
-        if (t.done) reset(t);
-        else if (t.running) { t.remaining = remainingOf(t); t.running = false; }
-        else { t.endAt = Date.now() + t.remaining; t.running = true; }
-        break;
-      case "plus":
-        if (t.done) { t.done = false; t.rang = false; t.remaining = 60000; t.total += 60000; t.endAt = Date.now() + 60000; t.running = true; }
-        else { t.total += 60000; if (t.running) t.endAt += 60000; else t.remaining += 60000; }
-        break;
-      case "minus": {
-        const rem = remainingOf(t);
-        if (t.done || rem <= MINUTE) break;
-        if (t.running) t.endAt -= MINUTE; else t.remaining -= MINUTE;
-        t.total = Math.max(MINUTE, t.total - MINUTE);
-        break;
-      }
+      case "toggle": case "plus": case "minus": applyAct(t, b.dataset.act); break;
+      case "full": openFull(t); return;
       case "reset": reset(t); break;
       case "edit": openSheet(t); return;
       case "del": openConfirm(t); return;
@@ -704,6 +821,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
     timers = timers.filter(x => x !== t);
     render();
     $("snackText").textContent = `"${t.name}" deleted`;
+    clearTimeout(snackHide); $("snackUndo").hidden = false; // the keep-on message may have hidden Undo
     $("snack").hidden = false;
     clearTimeout(snackTimer);
     snackTimer = setTimeout(() => { $("snack").hidden = true; lastDeleted = null; }, 5000);
@@ -720,7 +838,169 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
     else if (!$("dialog").hidden) closeConfirm();
     else if (!$("sheet").hidden) closeSheet();
     else if (!$("settings").hidden) closeSettings();
+    else if (!$("fullView").hidden) closeFull();
   });
+
+  function stateText(t, rem) {
+    return (t.done ? "Time's up" :
+      t.running ? `Ends at ${endsAt(rem)}` :
+      rem === t.total ? `Ready · ${fmtTotal(t.total)}` : `Paused · of ${fmtTotal(t.total)}`)
+      + (t.sound ? ` · ${soundName(t.sound)}` : "");
+  }
+
+  // ---------- Full screen
+  let fsId = null, trayKey = "";
+  const FC = 2 * Math.PI * 108;
+  $("fsArc").setAttribute("stroke-dasharray", FC);
+  const fsTimer = () => timers.find(x => x.id === fsId);
+  function openFull(t) {
+    fsId = t.id; trayKey = "";
+    $("banner").classList.remove("show");
+    $("fullView").hidden = false;
+    $("screen").classList.add("fs-open");
+    updateFull();
+    syncWakeLock();
+    $("fsExit").focus();
+  }
+  function closeFull() {
+    const id = fsId; fsId = null; $("fullView").hidden = true; trayKey = "";
+    $("screen").classList.remove("fs-open");
+    syncWakeLock();
+    const back = list.querySelector(`[data-id="${id}"] [data-act="full"]`);
+    if (back) back.focus();
+  }
+  $("fsExit").addEventListener("click", closeFull);
+  $("fsPlay").addEventListener("click", () => { const t = fsTimer(); if (t) { applyAct(t, "toggle"); tick(); } });
+  $("fsPlus").addEventListener("click", () => { const t = fsTimer(); if (t) { applyAct(t, "plus"); tick(); } });
+  $("fsMinus").addEventListener("click", () => { const t = fsTimer(); if (t) { applyAct(t, "minus"); tick(); } });
+
+  function updateFull() {
+    if (fsId === null) return;
+    const t = fsTimer();
+    if (!t) { closeFull(); return; } // deleted elsewhere
+    const rem = remainingOf(t), frac = t.total ? rem / t.total : 0;
+    $("fullView").style.setProperty("--c", `var(${t.color})`);
+    $("fullView").classList.toggle("done-main", t.done);
+    $("fsName").textContent = t.name;
+    $("fsArc").style.strokeDashoffset = FC * (1 - frac);
+    $("fsTime").textContent = t.done ? "00:00" : fmt(rem);
+    $("fsState").textContent = stateText(t, rem);
+    const play = $("fsPlay");
+    play.classList.toggle("paused", !t.running && !t.done);
+    play.querySelector("svg").innerHTML = ICON[t.done ? "stop" : t.running ? "pause" : "play"];
+    play.setAttribute("aria-label", t.done ? "Stop alarm" : t.running ? "Pause" : "Start");
+    $("fsMinus").disabled = t.done || rem <= MINUTE;
+    renderTray(timers.filter(x => x.done && x.id !== fsId).sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0)));
+  }
+
+  function ago(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")} s`;
+  }
+  function renderTray(ended) {
+    const tray = $("tray"), track = $("trayTrack"), n = ended.length;
+    tray.classList.toggle("open", n > 0);
+    tray.inert = n === 0;
+    const key = ended.map(x => x.id).join(",");
+    if (key !== trayKey) {
+      trayKey = key;
+      track.innerHTML = ended.map((t, i) => `
+        <article class="slide" data-id="${t.id}" style="--c: var(${t.color})" aria-roledescription="slide" aria-label="${i + 1} of ${n}">
+          <div class="slide-name"><span class="dot big"></span><span class="nm"></span></div>
+          <div class="slide-time">00:00</div>
+          <div class="slide-sub"></div>
+          <div class="slide-actions">
+            <button class="btn stop" type="button" data-tray="stop">Stop</button>
+            <button class="btn more" type="button" data-tray="plus">+1 min</button>
+          </div>
+        </article>`).join("");
+      track.querySelectorAll(".slide").forEach((el, i) => {
+        el.querySelector(".nm").textContent = ended[i].name;
+        el.querySelectorAll("button").forEach(b => b.setAttribute("aria-label", `${b.textContent} ${ended[i].name}`));
+      });
+      $("trayDots").innerHTML = n > 1 ? ended.map((t, i) =>
+        `<button type="button" data-i="${i}" aria-label="Show ${i + 1} of ${n}"></button>`).join("") : "";
+      $("trayDots").querySelectorAll("button").forEach(b => b.textContent = "");
+      $("trayPrev").hidden = $("trayNext").hidden = n < 2;
+      $("trayTitle").textContent = n === 1 ? `${ended[0].name} is done` : n ? `${n} timers done · swipe to see each` : "";
+      syncDots();
+    }
+    track.querySelectorAll(".slide").forEach((el, i) => {
+      const t = ended[i];
+      el.querySelector(".slide-sub").textContent = `Ended ${ago(Date.now() - (t.endedAt || Date.now()))} ago · ${soundName(effectiveSound(t))}`;
+    });
+  }
+  const slideStep = () => { const s = $("trayTrack").querySelector(".slide"); return s ? s.offsetWidth + 10 : 1; };
+  function syncDots() {
+    const i = Math.round($("trayTrack").scrollLeft / slideStep());
+    $("trayDots").querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-current", j === i));
+  }
+  $("trayTrack").addEventListener("scroll", syncDots, { passive: true });
+  $("trayPrev").addEventListener("click", () => $("trayTrack").scrollBy({ left: -slideStep(), behavior: "smooth" }));
+  $("trayNext").addEventListener("click", () => $("trayTrack").scrollBy({ left: slideStep(), behavior: "smooth" }));
+  $("trayDots").addEventListener("click", e => {
+    const b = e.target.closest("[data-i]"); if (!b) return;
+    $("trayTrack").scrollTo({ left: +b.dataset.i * slideStep(), behavior: "smooth" });
+  });
+  $("trayTrack").addEventListener("click", e => {
+    const b = e.target.closest("[data-tray]"); if (!b) return;
+    const t = timers.find(x => x.id === +b.closest(".slide").dataset.id); if (!t) return;
+    if (b.dataset.tray === "stop") reset(t); else applyAct(t, "plus");
+    tick();
+    if (!$("tray").classList.contains("open")) $("fsPlay").focus();
+  });
+
+  // ---------- Keep screen on (setting + quick toggle in full screen)
+  let keepOn = true, wakeLock = null, snackHide = null;
+  try { keepOn = localStorage.getItem("mt-keepon") !== "off"; } catch (e) {}
+  function showKeepOn() {
+    $("keepOnSwitch").setAttribute("aria-checked", keepOn);
+    $("fsKeepOn").setAttribute("aria-pressed", keepOn);
+    $("fsKeepOn").title = keepOn ? "Screen stays on" : "Screen can turn off";
+  }
+  async function syncWakeLock() {
+    const want = keepOn && fsId !== null && document.visibilityState === "visible";
+    try {
+      if (want && !wakeLock && navigator.wakeLock) {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => { wakeLock = null; });
+      } else if (!want && wakeLock) { await wakeLock.release(); wakeLock = null; }
+    } catch (e) { wakeLock = null; } // not allowed here: the setting still shows the intended behavior
+  }
+  function setKeepOn(v, announce) {
+    keepOn = v;
+    try { localStorage.setItem("mt-keepon", v ? "on" : "off"); } catch (e) {}
+    showKeepOn(); syncWakeLock();
+    if (announce) {
+      $("snackText").textContent = v ? "Screen stays on in full screen" : "Screen can turn off in full screen";
+      $("snackUndo").hidden = true; $("snack").hidden = false;
+      clearTimeout(snackHide);
+      snackHide = setTimeout(() => { $("snack").hidden = true; $("snackUndo").hidden = false; }, 2500);
+    }
+  }
+  $("keepOnSwitch").addEventListener("click", () => setKeepOn(!keepOn, false));
+  $("fsKeepOn").addEventListener("click", () => setKeepOn(!keepOn, true));
+  document.addEventListener("visibilitychange", syncWakeLock);
+  showKeepOn();
+
+  // ---------- Demo helpers (only in this preview)
+  function demoFinish(count) {
+    ensureCtx();
+    if (fsId === null) {
+      const pick = timers.find(x => x.name.startsWith("Focaccia") && !x.done) || timers.find(x => !x.done);
+      if (pick) { if (!pick.running) applyAct(pick, "toggle"); openFull(pick); }
+    }
+    let others = timers.filter(x => x.id !== fsId && !x.done);
+    while (others.length < count) {
+      const t = make(`Quick ${others.length + 1} min`, 60, COLORS[timers.length % COLORS.length], true);
+      timers.push(t); others.push(t); render();
+    }
+    const now = Date.now();
+    others.slice(0, count).forEach((t, i) => { t.running = true; t.endAt = now - 1 - i * 10; });
+    tick();
+  }
+  $("demoOne").addEventListener("click", () => demoFinish(1));
+  $("demoThree").addEventListener("click", () => demoFinish(3));
 
   // Settings page: theme + default sound (remembered in this browser)
   function applyMode(m) {

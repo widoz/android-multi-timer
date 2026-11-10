@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,6 +24,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -49,6 +51,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val theme by AppSettings.theme.collectAsStateWithLifecycle()
     val defaultSound by AppSettings.defaultSound.collectAsStateWithLifecycle()
+    val keepScreenOn by AppSettings.keepScreenOn.collectAsStateWithLifecycle()
     var pickingSound by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
@@ -126,6 +129,20 @@ fun SettingsScreen(onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp),
+            )
+
+            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline)
+
+            SectionHeader(stringResource(R.string.full_screen))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.keep_screen_on)) },
+                supportingContent = { Text(stringResource(R.string.keep_screen_on_desc)) },
+                trailingContent = { Switch(checked = keepScreenOn, onCheckedChange = null) },
+                modifier = Modifier.toggleable(
+                    value = keepScreenOn,
+                    role = Role.Switch,
+                    onValueChange = { AppSettings.setKeepScreenOn(it) },
+                ),
             )
         }
     }

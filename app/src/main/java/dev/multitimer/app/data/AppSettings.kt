@@ -28,12 +28,16 @@ object AppSettings {
     private const val PREFS = "settings"
     private const val KEY_THEME = "theme_mode"
     private const val KEY_DEFAULT_SOUND = "default_sound"
+    private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
 
     private lateinit var app: Context
     private val _theme = MutableStateFlow(ThemeMode.SYSTEM)
     val theme: StateFlow<ThemeMode> = _theme.asStateFlow()
     private val _defaultSound = MutableStateFlow(Sounds.DEFAULT)
     val defaultSound: StateFlow<String> = _defaultSound.asStateFlow()
+    private val _keepScreenOn = MutableStateFlow(true)
+    /** Keep the screen on while a timer is full screen. On by default. */
+    val keepScreenOn: StateFlow<Boolean> = _keepScreenOn.asStateFlow()
 
     fun init(context: Context) {
         if (::app.isInitialized) return
@@ -42,6 +46,7 @@ object AppSettings {
         _theme.value = runCatching { ThemeMode.valueOf(prefs.getString(KEY_THEME, null) ?: "") }
             .getOrDefault(ThemeMode.SYSTEM)
         _defaultSound.value = prefs.getString(KEY_DEFAULT_SOUND, null) ?: Sounds.DEFAULT
+        _keepScreenOn.value = prefs.getBoolean(KEY_KEEP_SCREEN_ON, true)
         applyNightMode(_theme.value)
     }
 
@@ -58,6 +63,11 @@ object AppSettings {
     }
 
     /** Android 12+ only. On Android 11 the Compose theme applies the choice (see MainActivity). */
+    fun setKeepScreenOn(on: Boolean) {
+        _keepScreenOn.value = on
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean(KEY_KEEP_SCREEN_ON, on) }
+    }
+
     private fun applyNightMode(mode: ThemeMode) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         app.getSystemService(UiModeManager::class.java).setApplicationNightMode(

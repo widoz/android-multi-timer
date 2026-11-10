@@ -7,7 +7,11 @@ File paths below are relative to the repository root.
 - **Edit** reuses the new-timer panel. Label, color and sound change in place; a new duration
   restarts the timer, after a confirmation if it had already counted some time.
 - **Delete** asks for confirmation, then offers Undo for a few seconds.
-- **Settings** (gear icon): Theme (System default, Light, Dark) and the default alarm sound.
+- **Full screen** (four-arrows icon next to start/pause): one timer, large. Other timers that finish
+  meanwhile appear in a tray at the bottom, one swipeable card each with Stop and +1 min. The
+  screen stays on (Settings › Full screen › Keep screen on, or the sun icon in full screen) and the
+  system bars are hidden. See [ADR 0015](adr/0015-full-screen-timer.md).
+- **Settings** (gear icon): Theme (System default, Light, Dark), the default alarm sound and Keep screen on.
 - **Sounds**: each timer uses the default sound unless you pick its own in the New/Edit panel.
   The picker lists the app's own sounds, then the phone's alarm sounds ("Phone's alarm sound"
   first), then "Silent"; tap one to preview it.
@@ -43,7 +47,8 @@ File paths below are relative to the repository root.
   ```
 
   Without `-Pscreenshots` the test runs but writes no images. The first run downloads
-  Robolectric's Android runtime (a few hundred MB).
+  Robolectric's Android runtime (a few hundred MB). `FullScreenScreenshotTest` also renders the
+  full-screen states (running, tray, finished) to `app/build/outputs/full-screen/` for review.
 
 ## Open and run
 
@@ -73,6 +78,7 @@ Source files are under `app/src/main/java/dev/multitimer/app/`.
 | Notifications | `alarm/TimerNotifier.kt` | One silent notification per running or paused timer. Running ones use the system countdown chronometer, so no service runs while timers only count down. |
 | Sounds | `alarm/Sounds.kt` | App sounds, the phone's alarm sounds (deduplicated by name), titles and the picker preview. |
 | Receivers | `alarm/Receivers.kt` | Alarm firing, notification buttons (Pause/Resume, +1 min, Reset/Stop, Stop all) and restoring timers after reboot or app update. |
+| Full screen | `ui/FullScreenTimer.kt`, `alarm/FullScreenState.kt` | Full-screen timer, tray of finished timers (pager), keep-screen-on and hidden system bars; tells the alarm service not to pop up notifications while visible. |
 | UI | `ui/` | Timer list and cards, quick-start chips, create/edit bottom sheet, Settings, sound picker, confirmation dialogs, Undo snackbar. |
 
 ## Release builds

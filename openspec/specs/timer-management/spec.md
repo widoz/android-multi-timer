@@ -4,6 +4,7 @@
 Lets a user create, run and manage several countdown timers at once, each fully independent of the others, from a single list screen.
 
 ## Requirements
+
 ### Requirement: Independent timers
 The app SHALL let the user keep any number of timers, and each timer SHALL start, pause, resume, reset, change and finish without affecting any other timer.
 
@@ -45,7 +46,7 @@ The list screen SHALL offer quick-start chips for 1, 5, 10, 20 and 30 minutes an
 - **THEN** a running 20-minute timer labelled "20 min" appears at the top of the list
 
 ### Requirement: Timer card
-Each timer SHALL be shown as a card with its color, label, remaining time, a progress ring with percentage, a status line, a start/pause button and the actions −1 min, +1 min, reset, edit and delete.
+Each timer SHALL be shown as a card with its color, label, remaining time, a progress ring with percentage, a status line, a full-screen button and a start/pause button, and the actions −1 min, +1 min, reset, edit and delete.
 
 #### Scenario: Status line
 - **WHEN** a timer is running, paused partway, ready (full duration) or finished
@@ -54,6 +55,10 @@ Each timer SHALL be shown as a card with its color, label, remaining time, a pro
 #### Scenario: Own sound shown
 - **WHEN** a timer has its own sound instead of the app default
 - **THEN** the status line ends with " · <sound name>"
+
+#### Scenario: Full-screen button
+- **WHEN** the user taps a card's full-screen button
+- **THEN** that timer opens full screen
 
 ### Requirement: Add and remove a minute
 The +1 min action SHALL add one minute to a timer in any state, and the −1 min action SHALL remove one minute only while more than one minute remains.

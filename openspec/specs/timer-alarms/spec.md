@@ -4,6 +4,7 @@
 Makes timers finish on time and alert the user reliably, whether the app is open or not, through notifications and a ringing alarm.
 
 ## Requirements
+
 ### Requirement: On-time finish in the background
 A running timer SHALL finish at its end time even when the app is closed, the screen is off or the phone is idle.
 
@@ -31,7 +32,7 @@ A finished timer SHALL ring with its sound, looping, on the alarm volume, and vi
 - **THEN** one sound plays (the newest ringing timer's) until all ringing timers are stopped
 
 ### Requirement: Ringing notification
-While any timer is ringing, the app SHALL show one high-priority notification: for one timer "<label> is done" with Stop and +1 min; for several timers "<n> timers done" listing their labels, with Stop all.
+While any timer is ringing, the app SHALL show one high-priority notification: for one timer "<label> is done" with Stop and +1 min; for several timers "<n> timers done" listing their labels, with Stop all. While a timer is full screen and the app is visible, the notification SHALL NOT pop up over the screen (it stays in the notification shade, still vibrating), because the full-screen tray shows the finished timers.
 
 #### Scenario: Stop from the notification
 - **WHEN** the user taps Stop on the ringing notification
@@ -40,6 +41,10 @@ While any timer is ringing, the app SHALL show one high-priority notification: f
 #### Scenario: Stop all
 - **WHEN** three timers ring and the user taps Stop all
 - **THEN** all three stop ringing
+
+#### Scenario: Full screen visible
+- **WHEN** a timer finishes while another timer is full screen and the app is visible
+- **THEN** no notification pops up over the screen, the alarm sound plays, and the finished timer appears in the tray
 
 ### Requirement: Per-timer notifications
 Each running timer SHALL have a silent ongoing notification with a live countdown, its end time, and Pause, +1 min and Reset actions. Each paused timer with progress SHALL have a silent notification showing the time left with Resume and Reset. Ready timers SHALL have no notification.

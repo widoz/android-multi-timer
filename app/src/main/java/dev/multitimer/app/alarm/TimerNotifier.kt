@@ -33,6 +33,7 @@ import java.util.Date
 object TimerNotifier {
     private const val CHANNEL_RUNNING = "running"
     private const val CHANNEL_RINGING = "ringing"
+    private const val CHANNEL_RINGING_QUIET = "ringing_full_screen"
     private const val LEGACY_CHANNEL_ALARM = "alarm"
     private const val LEGACY_SOUND_CHANNEL_PREFIX = "alarm_"
 
@@ -57,7 +58,18 @@ object TimerNotifier {
             vibrationPattern = longArrayOf(0, 600, 400, 600)
         }
         val nm = context.getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannels(listOf(running, ringing))
+        // Same, but no heads-up pop-up: used while a full-screen timer is visible.
+        val ringingQuiet = NotificationChannel(
+            CHANNEL_RINGING_QUIET,
+            context.getString(R.string.channel_alarm_full_screen),
+            NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply {
+            description = context.getString(R.string.channel_alarm_full_screen_desc)
+            setSound(null, null)
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 600, 400, 600)
+        }
+        nm.createNotificationChannels(listOf(running, ringing, ringingQuiet))
         // Older versions played the sound through notification channels: remove them.
         nm.notificationChannels
             .filter { it.id == LEGACY_CHANNEL_ALARM || it.id.startsWith(LEGACY_SOUND_CHANNEL_PREFIX) }
@@ -135,7 +147,7 @@ object TimerNotifier {
             .apply { flags = flags or Notification.FLAG_INSISTENT } // keep ringing until handled
 
     /** AlarmService's notification: one for all ringing timers. */
-    fun ringing(context: Context, timers: List<TimerItem>): Notification {
+    fun ringing(context: Context, timers: List<TimerItem>, quiet: Boolean = FullScreenState.visible): Notification {
         val single = timers.singleOrNull()
         val title = if (single != null) {
             context.getString(R.string.ringing_one, single.label)
@@ -147,13 +159,13 @@ object TimerNotifier {
         } else {
             timers.joinToString(", ") { it.label }
         }
-        val builder = NotificationCompat.Builder(context, CHANNEL_RINGING)
+        val builder = NotificationCompat.Builder(context, if (quiet) CHANNEL_RINGING_QUIET else CHANNEL_RINGING)
             .setSmallIcon(R.drawable.ic_stat_timer)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(openApp(context))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setPriority(if (quiet) NotificationCompat.PRIORITY_DEFAULT else NotificationCompat.PRIORITY_MAX)
             .setOngoing(true)
             .addAction(
                 0,

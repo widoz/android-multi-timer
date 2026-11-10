@@ -53,6 +53,24 @@
     <string name="sound_preview_hint">Tap a sound to hear it.</string>
     <string name="status_with_sound">%1$s · %2$s</string>
     <string name="ok">OK</string>
+
+    <string name="full_screen">Full screen</string>
+    <string name="exit_full_screen">Exit full screen</string>
+    <string name="keep_screen_on">Keep screen on</string>
+    <string name="keep_screen_on_desc">While a timer is full screen, the screen doesn\'t turn off or lock.</string>
+    <string name="screen_stays_on">Screen stays on in full screen</string>
+    <string name="screen_can_turn_off">Screen can turn off in full screen</string>
+    <string name="tray_one">%1$s is done</string>
+    <plurals name="tray_many">
+        <item quantity="one">%d timer done · swipe to see each</item>
+        <item quantity="other">%d timers done · swipe to see each</item>
+    </plurals>
+    <string name="tray_ended">Ended %1$s ago · %2$s</string>
+    <string name="tray_previous">Previous finished timer</string>
+    <string name="tray_next">Next finished timer</string>
+    <string name="tray_page">Show %1$d of %2$d</string>
+    <string name="tray_stop_cd">Stop %1$s</string>
+    <string name="tray_add_minute_cd">Add 1 minute to %1$s</string>
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
@@ -106,6 +124,8 @@
         <item quantity="other">%d timers done</item>
     </plurals>
     <string name="stop_all">Stop all</string>
+    <string name="channel_alarm_full_screen">Finished timers (full screen)</string>
+    <string name="channel_alarm_full_screen_desc">Used while a timer is full screen: vibrates without popping up, since the screen already shows finished timers.</string>
     <string name="channel_alarm_desc">Shows and vibrates when a timer reaches zero. The sound follows the alarm volume.</string>
     <string name="notif_paused">Paused · %1$s left</string>
     <string name="notif_done">Time\'s up · %1$s timer</string>

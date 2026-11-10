@@ -86,6 +86,7 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val timers by TimerRepository.timers.collectAsStateWithLifecycle()
     var sheetTarget by rememberSaveable { mutableStateOf<Int?>(null) }
+    var fullScreenId by rememberSaveable { mutableStateOf<Int?>(null) }
     var confirmDeleteId by rememberSaveable { mutableStateOf<Int?>(null) }
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -139,6 +140,22 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
             val result = snackbarHost.showSnackbar(message, actionLabel = undo, duration = SnackbarDuration.Short)
             if (result == SnackbarResult.ActionPerformed) TimerRepository.restore(deleted)
         }
+    }
+
+    val fullScreen = fullScreenId?.let { id -> timers.firstOrNull { it.id == id } }
+    if (fullScreenId != null && fullScreen == null) {
+        LaunchedEffect(fullScreenId) { fullScreenId = null } // deleted while full screen
+    }
+    if (fullScreen != null) {
+        FullScreenTimer(
+            timer = fullScreen,
+            ended = timers
+                .filter { it.state == TimerState.FINISHED && it.id != fullScreen.id }
+                .sortedByDescending { it.endAt },
+            now = now,
+            onExit = { fullScreenId = null },
+        )
+        return
     }
 
     Scaffold(
@@ -224,6 +241,7 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
                     now = now,
                     onEdit = { sheetTarget = timer.id },
                     onDelete = { confirmDeleteId = timer.id },
+                    onFullScreen = { fullScreenId = timer.id },
                     modifier = Modifier.animateItem(),
                 )
             }
