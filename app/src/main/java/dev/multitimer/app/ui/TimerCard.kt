@@ -46,7 +46,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -80,6 +82,8 @@ fun TimerCard(
     onDelete: () -> Unit,
     onFullScreen: () -> Unit,
     modifier: Modifier = Modifier,
+    lifted: Boolean = false,
+    moveActions: List<CustomAccessibilityAction> = emptyList(),
 ) {
     val context = LocalContext.current
     val scheme = MaterialTheme.colorScheme
@@ -97,7 +101,12 @@ fun TimerCard(
             containerColor = if (finished) scheme.errorContainer else scheme.surfaceContainerLow,
         ),
         border = androidx.compose.foundation.BorderStroke(
-            1.dp, if (finished) scheme.error else scheme.outline,
+            1.dp,
+            when {
+                finished -> scheme.error
+                lifted -> scheme.onSurface // being dragged: stronger edge
+                else -> scheme.outline
+            },
         ),
     ) {
         Column(Modifier.padding(start = 16.dp, top = 14.dp, end = 12.dp, bottom = 6.dp)) {
@@ -121,7 +130,14 @@ fun TimerCard(
                     )
                 }
 
-                Column(Modifier.weight(1f)) {
+                // One TalkBack stop for label, time and status; it also carries the Move actions.
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .semantics(mergeDescendants = true) {
+                            if (moveActions.isNotEmpty()) customActions = moveActions
+                        }
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Box(Modifier.size(8.dp).background(timerColor(timer.colorIndex), CircleShape))
                         Text(

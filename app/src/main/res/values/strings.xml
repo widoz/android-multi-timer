@@ -106,6 +106,14 @@
     <string name="delete_idle">The timer will be removed.</string>
     <string name="deleted">\"%1$s\" deleted</string>
 
+    <!-- Reordering -->
+    <string name="move_title">Move \"%1$s\"</string>
+    <string name="move_to_top">Move to top</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
+    <string name="move_to_bottom">Move to bottom</string>
+    <string name="moved_to">%1$s moved to position %2$d of %3$d</string>
+
     <string name="restart_title">Restart timer?</string>
     <string name="restart_running">\"%1$s\" is running. Saving the new duration stops it and starts it again from %2$s.</string>
     <string name="restart_paused">\"%1$s\" is paused with %2$s left. Saving the new duration resets it to %3$s.</string>

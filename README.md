@@ -20,6 +20,8 @@ countdowns as you need, side by side, and each one rings with its own retro 8-bi
   they ring even when your phone is set to vibrate.
 - **Full screen.** Show one timer big, with the screen kept on; timers that end meanwhile slide up
   from the bottom, one swipeable card each, to stop separately.
+- **Your order.** Long-press a timer and drag it where you want it; the order is kept. Prefer not
+  to drag? Long-press and let go for Move to top, up, down or to bottom.
 - **Control from the notification shade.** Each timer shows a live countdown with Pause, +1 min and Reset.
 - **Five original 8-bit sounds.** Power chime, Pixel bell, Beeper, Gentle rise and Jingle, or any
   of your phone's alarm sounds, chosen per timer.

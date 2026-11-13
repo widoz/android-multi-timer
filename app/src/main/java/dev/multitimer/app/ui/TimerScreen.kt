@@ -14,8 +14,37 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.VerticalAlignBottom
+import androidx.compose.material.icons.filled.VerticalAlignTop
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -90,6 +119,13 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
     var confirmDeleteId by rememberSaveable { mutableStateOf<Int?>(null) }
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+    val reorder = remember(listState) { ReorderState(listState) }
+    var moveMenuId by remember { mutableStateOf<Int?>(null) }
+    var flash by remember { mutableStateOf<Pair<Int, Long>?>(null) } // card that just moved via the menu
+    val haptics = LocalHapticFeedback.current
+    val view = LocalView.current
+    val density = LocalDensity.current
 
     // Clock for the UI only; it ticks while the screen is visible.
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -130,6 +166,43 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
     val baseSummary = pluralStringResource(R.plurals.summary, running, running, timers.size)
     val summary = if (ringing > 0) pluralStringResource(R.plurals.summary_ringing, ringing, baseSummary, ringing) else baseSummary
     val nextColor = timers.size % TIMER_COLOR_COUNT
+    val ids = timers.map { it.id }
+    LaunchedEffect(ids) { reorder.syncWith(ids) }
+    val shown = reorder.arrange(timers) { it.id }
+    val canReorder = timers.size >= 2
+
+    // Moves without dragging (Move menu, TalkBack): commit, keep the card visible, announce.
+    fun moveTo(id: Int, to: Int) {
+        val from = ids.indexOf(id)
+        val target = to.coerceIn(0, ids.lastIndex)
+        if (from < 0 || target == from) return
+        TimerRepository.move(id, target)
+        val label = timers[from].label
+        view.announceForAccessibility(context.getString(R.string.moved_to, label, target + 1, ids.size))
+        flash = id to System.nanoTime()
+        scope.launch {
+            val header = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key is Int }
+                ?.let { it.index - shown.indexOfFirst { t -> t.id == it.key } } ?: 1
+            val index = header + target
+            if (listState.layoutInfo.visibleItemsInfo.none { it.index == index && it.offset >= 0 }) {
+                listState.animateScrollToItem(index)
+            }
+        }
+    }
+
+    // Auto-scroll while a lifted card is held near the top or bottom edge.
+    val edgePx = with(density) { 56.dp.toPx() }
+    LaunchedEffect(reorder.active) {
+        while (reorder.active) {
+            withFrameNanos { }
+            val over = reorder.edgeOverlap(edgePx)
+            if (over != 0f) {
+                val step = (over / 4f).coerceIn(-edgePx / 2, edgePx / 2)
+                listState.scrollBy(step)
+                if (reorder.dragBy(0f)) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+        }
+    }
 
     fun deleteWithUndo(id: Int) {
         val deleted = TimerRepository.delete(id) ?: return
@@ -194,6 +267,7 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
         },
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 16.dp,
@@ -235,15 +309,102 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
             if (timers.isEmpty()) {
                 item(key = "empty") { EmptyState() }
             }
-            items(timers, key = { it.id }) { timer ->
-                TimerCard(
-                    timer = timer,
-                    now = now,
-                    onEdit = { sheetTarget = timer.id },
-                    onDelete = { confirmDeleteId = timer.id },
-                    onFullScreen = { fullScreenId = timer.id },
-                    modifier = Modifier.animateItem(),
-                )
+            items(shown, key = { it.id }) { timer ->
+                val lifted = reorder.draggingId == timer.id
+                val index = ids.indexOf(timer.id)
+                val moves = moveOptions(index, ids.size)
+                val actionLabels = moves.map { stringResource(it.label) }
+                val flashAlpha = remember { Animatable(0f) }
+                LaunchedEffect(flash) {
+                    if (flash?.first == timer.id) {
+                        flashAlpha.snapTo(1f)
+                        flashAlpha.animateTo(0f, tween(600))
+                    }
+                }
+                Box(
+                    Modifier
+                        .zIndex(if (lifted) 1f else 0f)
+                        .animateItem(
+                            // The lifted card follows the finger itself; the others glide aside.
+                            placementSpec = if (lifted) null else spring(
+                                stiffness = Spring.StiffnessMediumLow,
+                                visibilityThreshold = IntOffset.VisibilityThreshold,
+                            ),
+                        ),
+                ) {
+                    if (lifted) {
+                        // Shaded layer where the card will land
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+                                    RoundedCornerShape(20.dp),
+                                )
+                        )
+                    }
+                    TimerCard(
+                        timer = timer,
+                        now = now,
+                        onEdit = { sheetTarget = timer.id },
+                        onDelete = { confirmDeleteId = timer.id },
+                        onFullScreen = { fullScreenId = timer.id },
+                        lifted = lifted,
+                        moveActions = moves.mapIndexed { i, m ->
+                            CustomAccessibilityAction(actionLabels[i]) { moveTo(timer.id, m.target); true }
+                        },
+                        modifier = Modifier
+                            .graphicsLayer {
+                                if (lifted) {
+                                    translationY = reorder.translation()
+                                    scaleX = 1.02f
+                                    scaleY = 1.02f
+                                    shadowElevation = 12.dp.toPx()
+                                    shape = RoundedCornerShape(20.dp)
+                                    clip = false
+                                }
+                            }
+                            .longPressDrag(
+                                key = timer.id,
+                                enabled = canReorder,
+                                onStart = {
+                                    moveMenuId = null
+                                    // pointerInput keeps this lambda from its first composition: read the list fresh
+                                    reorder.start(timer.id, TimerRepository.timers.value.map { it.id }).also {
+                                        if (it) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
+                                },
+                                onDrag = { dy ->
+                                    if (reorder.dragBy(dy)) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                },
+                                onEnd = { moved, completed ->
+                                    scope.launch {
+                                        val to = reorder.release(commit = moved && completed)
+                                        if (to != null) TimerRepository.move(timer.id, to)
+                                        if (!moved && completed) moveMenuId = timer.id
+                                    }
+                                },
+                            ),
+                    )
+                    if (flashAlpha.value > 0f) {
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .alpha(flashAlpha.value)
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+                                    RoundedCornerShape(20.dp),
+                                )
+                        )
+                    }
+                    MoveMenu(
+                        expanded = moveMenuId == timer.id,
+                        label = timer.label,
+                        moves = moves,
+                        onMove = { target -> moveMenuId = null; moveTo(timer.id, target) },
+                        onDismiss = { moveMenuId = null },
+                    )
+                }
             }
         }
     }
@@ -300,6 +461,63 @@ fun TimerScreen(onOpenSettings: () -> Unit) {
         )
     } else if (confirmDeleteId != null) {
         LaunchedEffect(confirmDeleteId) { confirmDeleteId = null }
+    }
+}
+
+/** A move the timer at [index] can make, as offered by the Move menu and TalkBack. */
+private data class MoveOption(val label: Int, val icon: ImageVector, val target: Int)
+
+private fun moveOptions(index: Int, count: Int): List<MoveOption> = buildList {
+    if (index < 0 || count < 2) return@buildList
+    if (index > 0) {
+        add(MoveOption(R.string.move_to_top, Icons.Filled.VerticalAlignTop, 0))
+        add(MoveOption(R.string.move_up, Icons.Filled.KeyboardArrowUp, index - 1))
+    }
+    if (index < count - 1) {
+        add(MoveOption(R.string.move_down, Icons.Filled.KeyboardArrowDown, index + 1))
+        add(MoveOption(R.string.move_to_bottom, Icons.Filled.VerticalAlignBottom, count - 1))
+    }
+}
+
+/** Opened by a long press released in place: the way to reorder without dragging. */
+@Composable
+private fun MoveMenu(
+    expanded: Boolean,
+    label: String,
+    moves: List<MoveOption>,
+    onMove: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        offset = DpOffset(56.dp, (-48).dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Text(
+            stringResource(R.string.move_title, label),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        // All four are listed; the ones that don't apply are disabled, as in the mockup.
+        listOf(
+            R.string.move_to_top to Icons.Filled.VerticalAlignTop,
+            R.string.move_up to Icons.Filled.KeyboardArrowUp,
+            R.string.move_down to Icons.Filled.KeyboardArrowDown,
+            R.string.move_to_bottom to Icons.Filled.VerticalAlignBottom,
+        ).forEach { (text, icon) ->
+            val option = moves.firstOrNull { it.label == text }
+            DropdownMenuItem(
+                text = { Text(stringResource(text)) },
+                leadingIcon = { Icon(icon, contentDescription = null) },
+                enabled = option != null,
+                onClick = { option?.let { onMove(it.target) } },
+            )
+        }
     }
 }
 
