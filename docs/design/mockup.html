@@ -104,7 +104,7 @@ body {
 }
 .chip:hover { border-color: var(--primary); }
 
-.list { flex: 1; overflow-y: auto; padding: 4px 16px 100px; display: flex; flex-direction: column; gap: 10px; }
+.list { position: relative; flex: 1; overflow-y: auto; padding: 4px 16px 100px; display: flex; flex-direction: column; gap: 10px; }
 .empty { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 14px; line-height: 1.5; }
 
 .timer {
@@ -124,6 +124,47 @@ body {
 .step:disabled { opacity: .38; cursor: default; }
 .bar .iconbtn { width: 32px; height: 32px; color: var(--muted); }
 .bar .iconbtn svg { width: 18px; height: 18px; }
+/* ---------- reorder (drag and drop) ---------- */
+.timer { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.list.reordering { cursor: grabbing; }
+.list.reordering .timer { animation: none; }
+.list.reordering .timer:not(.dragging) { transition: transform .2s ease, background .2s; }
+.timer.dragging {
+  position: relative; z-index: 3; border-color: var(--ink);
+  box-shadow: 0 18px 32px -14px rgba(0,0,0,.55); transition: box-shadow .15s;
+}
+.timer.settling { transition: transform .18s ease, box-shadow .18s; }
+.timer.lifting { animation: lift .18s ease-out; }
+@keyframes lift { from { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
+.slot {
+  position: absolute; left: 16px; right: 16px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.12);
+  border-radius: 20px; pointer-events: none; z-index: 0; transition: top .2s ease;
+}
+.movemenu {
+  position: absolute; z-index: 9; min-width: 200px; padding: 8px 0; border-radius: 12px;
+  background: var(--card); color: var(--ink); border: 1px solid var(--outline);
+  box-shadow: 0 12px 28px -10px rgba(0,0,0,.45); display: flex; flex-direction: column;
+}
+.movetitle { padding: 6px 16px 8px; font-size: 13px; font-weight: 600; color: var(--muted); max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.movemenu button {
+  display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 16px; border: 0; background: transparent;
+  color: var(--ink); font: 400 15px var(--font-ui); text-align: start; cursor: pointer;
+}
+.movemenu button:hover:not(:disabled), .movemenu button:focus-visible { background: var(--primary-soft); }
+.movemenu button:focus-visible { outline-offset: -2px; }
+.movemenu button:disabled { opacity: .38; cursor: default; }
+.movemenu svg { width: 20px; height: 20px; fill: currentColor; flex: none; }
+.timer.menu-for { border-color: var(--ink); }
+.timer.flash { animation: flash .6s ease-out; }
+@keyframes flash { from { background: var(--primary-soft); } }
+@media (prefers-reduced-motion: reduce) { .timer.flash { animation: none; } }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .list.reordering .timer:not(.dragging), .timer.settling, .slot { transition: none; }
+  .timer.lifting { animation: none; }
+}
 .timer.done { background: var(--done-soft); border-color: var(--done); animation: ring 1s ease-in-out infinite; }
 @keyframes ring { 50% { transform: translateX(2px); } }
 @media (prefers-reduced-motion: reduce) { .timer.done { animation: none; } }
@@ -405,6 +446,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
       </div>
 
       <div class="list" id="list"></div>
+      <div class="sr-only" id="dragLive" aria-live="assertive"></div>
+      <div class="movemenu" id="moveMenu" role="menu" aria-labelledby="moveTitle" hidden>
+        <div class="movetitle" id="moveTitle">Move</div>
+        <button type="button" role="menuitem" data-move="top"><svg viewBox="0 0 24 24"><path d="M4 4h16v2H4zm8 3-6 6 1.41 1.41L11 10.83V20h2v-9.17l3.59 3.58L18 13z"/></svg>Move to top</button>
+        <button type="button" role="menuitem" data-move="up"><svg viewBox="0 0 24 24"><path d="m12 8-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg>Move up</button>
+        <button type="button" role="menuitem" data-move="down"><svg viewBox="0 0 24 24"><path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>Move down</button>
+        <button type="button" role="menuitem" data-move="bottom"><svg viewBox="0 0 24 24"><path d="M4 18h16v2H4zm8-1 6-6-1.41-1.41L13 13.17V4h-2v9.17L7.41 9.59 6 11z"/></svg>Move to bottom</button>
+      </div>
 
       <button class="fab" id="fab" type="button">
         <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
@@ -512,7 +561,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
     <p>Each timer runs on its own. Start, pause, reset, change, or delete any of them without touching the others. The sample timers on the left are live, and the 10-second chip lets you see what happens when one finishes.</p>
     <p class="hint">Tap anywhere first if you want to hear the alarm sound; browsers block audio until you interact.</p>
 
-    <h3>Full screen <span class="badge">New in 0.5.0</span></h3>
+    <h3>Reorder timers <span class="badge">New in 0.6.0</span></h3>
+    <p>Put your timers in the order you want. <b>Long-press a card</b> (anywhere that isn't a button) until it lifts, then drag it up or down. The other cards slide out of the way and a shaded layer shows where it will land. Near the top or bottom of the list, the list scrolls by itself. Let go to drop it; the order is saved.</p>
+    <p><b>Without dragging:</b> long-press a card and let go without moving. A <b>Move</b> menu opens on the card: Move to top, Move up, Move down, Move to bottom (options that don't apply are greyed out). The moved card briefly highlights in its new place. TalkBack users get the same four actions in the card's actions menu.</p>
+    <p class="hint">No grip on the cards: on 360dp-wide phones the action row has no room for one. In this preview, keyboard users can also press Alt+↑ / Alt+↓ while a card's button is focused, or Shift+F10 for the Move menu.</p>
+    <p class="hint">New timers and quick-start timers still appear at the top. Undo after a delete puts the timer back in its place.</p>
+
+    <h3>Full screen</h3>
     <p>The new icon on each card (four arrows, next to start/pause) shows that timer full screen: a big ring and countdown, with −1 min, start/pause and +1 min. The icon at the top left goes back to the list (Back does the same).</p>
     <p>Other timers keep running. When one of them ends, the full-screen view shrinks from the bottom and a tray slides up with the finished timer, ringing. If several end, each gets its own card in the tray: swipe sideways (or use the arrows) and stop each one separately, or add a minute. When the last one is stopped, the tray closes and the timer grows back to full size. If the full-screen timer itself ends, it turns orange in place with a big Stop button.</p>
     <p><b>Keep screen on</b> (Settings › Full screen, on by default): while a timer is full screen the screen doesn't turn off or lock. The sun icon at the top right of the full-screen view turns the same setting on or off without leaving the timer. In the app this uses Android's keep-screen-on flag, which needs no permission and only applies while the full-screen view is visible; this preview uses the browser's screen wake lock where allowed.</p>
@@ -616,6 +671,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
     stop: '<path d="M6 6h12v12H6z"/>',
     reset: '<path d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/>',
     edit: '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/>',
+    grip: '<path d="M9 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM9 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM9 16a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>',
     del: '<path d="M6 19c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/>'
   };
   const R = 27, C = 2 * Math.PI * R;
@@ -655,7 +711,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
         </div>
       </article>`).join("");
     list.querySelectorAll(".timer").forEach(el => {
-      el.querySelector(".label").textContent = timers.find(t => t.id == el.dataset.id).name;
+      const t = timers.find(t => t.id == el.dataset.id);
+      el.querySelector(".label").textContent = t.name;
+
     });
     tick();
   }
@@ -1149,6 +1207,186 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--primary); o
     t.sound = pickSound;
     timers.unshift(t);
     closeSheet(); render();
+  });
+
+  // ---------- Reorder: drag the grip, long-press the card, or keyboard on the grip
+  const GAP = 10, LONG_PRESS = 450, SLOP = 8, EDGE = 56;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  let drag = null, press = null;
+  const announce = msg => { $("dragLive").textContent = ""; setTimeout(() => { $("dragLive").textContent = msg; }, 30); };
+  const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+  const posText = i => `position ${i + 1} of ${timers.length}`;
+
+  function startDrag(el, clientY, mode) {
+    const cards = [...list.querySelectorAll(".timer")];
+    const from = cards.indexOf(el);
+    const t = timers.find(x => x.id == el.dataset.id);
+    drag = {
+      el, t, cards, mode, from, to: from, startY: clientY, lastY: clientY, startScroll: list.scrollTop,
+      tops: cards.map(c => c.offsetTop), heights: cards.map(c => c.offsetHeight), raf: 0,
+    };
+    const slot = document.createElement("div");
+    slot.className = "slot"; slot.style.height = el.offsetHeight + "px"; slot.style.top = el.offsetTop + "px";
+    list.appendChild(slot); drag.slot = slot;
+    list.classList.add("reordering");
+    el.classList.add("dragging", "lifting");
+    el.style.transform = mode === "keys" ? "" : "scale(1.02)";
+    buzz(15);
+    announce(mode === "keys"
+      ? `${t.name} picked up, ${posText(from)}.` : `${t.name} picked up, ${posText(from)}.`);
+    if (mode !== "keys") drag.raf = requestAnimationFrame(autoScroll);
+  }
+
+  // Where the dragged card would land, and the matching offsets for every card
+  function layout(to) {
+    const d = drag, h = d.heights[d.from] + GAP;
+    d.cards.forEach((c, j) => {
+      if (c === d.el) return;
+      let y = 0;
+      if (j > d.from && j <= to) y = -h; else if (j < d.from && j >= to) y = h;
+      c.style.transform = y ? `translateY(${y}px)` : "";
+    });
+    // slot top = the dragged card's final top
+    let top = d.tops[d.from];
+    if (to > d.from) for (let j = d.from + 1; j <= to; j++) top += d.heights[j] + GAP;
+    else for (let j = to; j < d.from; j++) top -= d.heights[j] + GAP;
+    d.slot.style.top = top + "px";
+    if (to !== d.to) { d.to = to; buzz(5); if (d.mode === "keys") announce(`${d.t.name}, ${posText(to)}.`); }
+    return top;
+  }
+
+  function moveTo(clientY) {
+    const d = drag; d.lastY = clientY;
+    const dy = clientY - d.startY + (list.scrollTop - d.startScroll);
+    d.el.style.transform = `translateY(${dy}px) scale(1.02)`;
+    const center = d.tops[d.from] + dy + d.heights[d.from] / 2;
+    let to = 0;
+    d.cards.forEach((c, j) => { if (j !== d.from && d.tops[j] + d.heights[j] / 2 < center) to++; });
+    layout(to);
+  }
+
+  function autoScroll() {
+    if (!drag) return;
+    const r = list.getBoundingClientRect();
+    let v = 0;
+    if (drag.lastY < r.top + EDGE) v = -Math.ceil((r.top + EDGE - drag.lastY) / 6);
+    else if (drag.lastY > r.bottom - EDGE - 80) v = Math.ceil((drag.lastY - (r.bottom - EDGE - 80)) / 6); // list has room under the FAB
+    if (v) { const before = list.scrollTop; list.scrollTop += v; if (list.scrollTop !== before) moveTo(drag.lastY); }
+    drag.raf = requestAnimationFrame(autoScroll);
+  }
+
+  function endDrag(commit, menuFor = null) {
+    const d = drag; if (!d) return;
+    cancelAnimationFrame(d.raf);
+    const to = commit ? d.to : d.from;
+    const top = layout(to);
+    d.el.classList.remove("lifting");
+    d.el.classList.add("settling");
+    d.el.style.transform = `translateY(${top - d.tops[d.from]}px)`;
+    const moved = commit && to !== d.from;
+    const finish = () => {
+      if (moved) { const [t] = timers.splice(d.from, 1); timers.splice(to, 0, t); }
+      drag = null;
+      list.classList.remove("reordering");
+      render();
+      if (menuFor) openMoveMenu(menuFor);
+    };
+    if (!menuFor) announce(moved ? `${d.t.name} dropped, ${posText(to)}.` : `${d.t.name} put back, ${posText(d.from)}.`);
+    if (reduceMotion.matches) finish(); else setTimeout(finish, 180);
+  }
+
+  list.addEventListener("pointerdown", e => {
+    if (drag || e.button > 0) return;
+    const el = e.target.closest(".timer"); if (!el) return;
+    if (timers.length < 2) return;
+    if (e.target.closest("button")) return; // other buttons keep their tap
+    press = { el, x: e.clientX, y: e.clientY, id: e.pointerId,
+      timer: setTimeout(() => { if (!press) return; startDrag(press.el, press.y, "pointer"); drag.pointerId = press.id; press = null; }, LONG_PRESS) };
+  });
+  window.addEventListener("pointermove", e => {
+    if (press && e.pointerId === press.id && Math.hypot(e.clientX - press.x, e.clientY - press.y) > SLOP) { clearTimeout(press.timer); press = null; }
+    if (drag && drag.mode === "pointer" && e.pointerId === drag.pointerId) {
+      if (Math.abs(e.clientY - drag.startY) > SLOP) drag.moved = true;
+      if (drag.moved) moveTo(e.clientY);
+    }
+  });
+  const release = e => {
+    if (press && e.pointerId === press.id) { clearTimeout(press.timer); press = null; }
+    if (drag && drag.mode === "pointer" && e.pointerId === drag.pointerId) {
+      const menuFor = !drag.moved && e.type === "pointerup" ? drag.t : null;
+      endDrag(e.type === "pointerup", menuFor);
+    }
+  };
+  window.addEventListener("pointerup", release);
+  window.addEventListener("pointercancel", release);
+  // While a card is lifted, a finger drag moves the card instead of scrolling the list
+  list.addEventListener("touchmove", e => { if (drag) e.preventDefault(); }, { passive: false });
+  list.addEventListener("contextmenu", e => { if (e.target.closest(".timer")) e.preventDefault(); });
+
+  // Move menu: opened by a long press released without moving (or Shift+F10 / Context menu key)
+  let menuTimer = null, menuReturn = null;
+  function moveTimer(t, to) {
+    const from = timers.indexOf(t); if (from < 0) return;
+    to = Math.max(0, Math.min(timers.length - 1, to));
+    if (to === from) return;
+    timers.splice(from, 1); timers.splice(to, 0, t);
+    render();
+    const el = list.querySelector(`[data-id="${t.id}"]`);
+    el.scrollIntoView({ block: "nearest", behavior: reduceMotion.matches ? "auto" : "smooth" });
+    el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 650);
+    announce(`${t.name} moved to ${posText(to)}.`);
+  }
+  function openMoveMenu(t) {
+    const el = list.querySelector(`[data-id="${t.id}"]`); if (!el || timers.length < 2) return;
+    menuTimer = t; menuReturn = document.activeElement;
+    const i = timers.indexOf(t), last = timers.length - 1, m = $("moveMenu");
+    m.querySelector('[data-move="top"]').disabled = m.querySelector('[data-move="up"]').disabled = i === 0;
+    m.querySelector('[data-move="down"]').disabled = m.querySelector('[data-move="bottom"]').disabled = i === last;
+    $("moveTitle").textContent = `Move "${t.name}"`;
+    m.hidden = false;
+    // Below the card's top row if it fits, else above the card
+    const sr = $("screen").getBoundingClientRect(), r = el.getBoundingClientRect(), mh = m.offsetHeight;
+    let top = r.top - sr.top + 56;
+    if (top + mh > sr.height - 16) top = Math.max(40, r.top - sr.top - mh + 40);
+    m.style.top = top + "px"; m.style.left = (r.left - sr.left + 56) + "px";
+    el.classList.add("menu-for");
+    m.querySelector("button:not(:disabled)").focus();
+  }
+  function closeMoveMenu(refocus = true) {
+    if ($("moveMenu").hidden) return;
+    $("moveMenu").hidden = true;
+    list.querySelectorAll(".menu-for").forEach(x => x.classList.remove("menu-for"));
+    const t = menuTimer; menuTimer = null;
+    if (refocus && t) (list.querySelector(`[data-id="${t.id}"] .play`) || menuReturn)?.focus();
+  }
+  $("moveMenu").addEventListener("click", e => {
+    const b = e.target.closest("button[data-move]"); if (!b || b.disabled) return;
+    const t = menuTimer, i = timers.indexOf(t);
+    closeMoveMenu(false);
+    moveTimer(t, { top: 0, up: i - 1, down: i + 1, bottom: timers.length - 1 }[b.dataset.move]);
+    list.querySelector(`[data-id="${t.id}"] .play`)?.focus();
+  });
+  $("moveMenu").addEventListener("keydown", e => {
+    const items = [...$("moveMenu").querySelectorAll("button:not(:disabled)")];
+    const k = items.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); items[(k + 1) % items.length].focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); items[(k - 1 + items.length) % items.length].focus(); }
+    else if (e.key === "Escape" || e.key === "Tab") { e.preventDefault(); e.stopPropagation(); closeMoveMenu(); }
+  }, true);
+  document.addEventListener("pointerdown", e => { if (!$("moveMenu").hidden && !e.target.closest("#moveMenu")) closeMoveMenu(false); }, true);
+  list.addEventListener("scroll", () => closeMoveMenu(false), { passive: true });
+
+  list.addEventListener("keydown", e => {
+    const el = e.target.closest(".timer"); if (!el || drag) return;
+    const t = timers.find(x => x.id == el.dataset.id); if (!t) return;
+    if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      e.preventDefault();
+      const act = e.target.dataset.act;
+      moveTimer(t, timers.indexOf(t) + (e.key === "ArrowUp" ? -1 : 1));
+      list.querySelector(`[data-id="${t.id}"] [data-act="${act}"]`)?.focus();
+    } else if ((e.shiftKey && e.key === "F10") || e.key === "ContextMenu") {
+      e.preventDefault(); openMoveMenu(t);
+    }
   });
 
   render();

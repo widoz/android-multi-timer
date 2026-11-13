@@ -178,6 +178,22 @@ object TimerRepository {
         if (t.state == TimerState.RUNNING && t.endAt <= System.currentTimeMillis()) finish(t.id) else sideEffects(t)
     }
 
+    /**
+     * Moves a timer to [toIndex] in the list (clamped to the list) and saves the new order.
+     * The stored list order is the order shown, so the custom order survives restarts.
+     */
+    @Synchronized
+    fun move(id: Int, toIndex: Int) {
+        val list = _timers.value.toMutableList()
+        val from = list.indexOfFirst { it.id == id }
+        if (from < 0) return
+        val to = toIndex.coerceIn(0, list.lastIndex)
+        if (to == from) return
+        list.add(to, list.removeAt(from))
+        _timers.value = list
+        save()
+    }
+
     private fun get(id: Int): TimerItem? = _timers.value.firstOrNull { it.id == id }
 
     @Synchronized

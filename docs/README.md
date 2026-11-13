@@ -11,6 +11,11 @@ File paths below are relative to the repository root.
   meanwhile appear in a tray at the bottom, one swipeable card each with Stop and +1 min. The
   screen stays on (Settings › Full screen › Keep screen on, or the sun icon in full screen) and the
   system bars are hidden. See [ADR 0015](adr/0015-full-screen-timer.md).
+- **Reorder**: long-press a card (outside its buttons) and drag it; the other cards move aside and a
+  shaded layer marks where it lands, and the list scrolls near its edges. Long-press and release in
+  place for the Move menu (Move to top / up / down / to bottom); TalkBack offers the same actions on
+  each card. The order is the stored list order, so it survives restarts; new timers still go on top.
+  Drag state lives in `ui/Reorder.kt`; the repository is updated once, on drop (`TimerRepository.move`).
 - **Settings** (gear icon): Theme (System default, Light, Dark), the default alarm sound and Keep screen on.
 - **Sounds**: each timer uses the default sound unless you pick its own in the New/Edit panel.
   The picker lists the app's own sounds, then the phone's alarm sounds ("Phone's alarm sound"
