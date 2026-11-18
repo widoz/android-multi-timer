@@ -11,6 +11,7 @@
 .kotlin/
 
 # Release signing: never commit
+.keys/
 keystore.properties
 *.jks
 *.keystore
