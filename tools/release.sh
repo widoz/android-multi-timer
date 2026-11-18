@@ -3,6 +3,8 @@
 #
 #   tools/release.sh            # full release
 #   tools/release.sh --dry-run  # everything up to the build and checks; no tag, no push, no release
+#   tools/release.sh --new-key  # accept a signing certificate that differs from the previous release
+#                               # (once, after switching keys; see docs/adr/0016). Combines with --dry-run.
 #
 # Needs: JDK 17–24 (JAVA_HOME), the Android SDK (ANDROID_HOME or local.properties),
 # keystore.properties at the project root, a GPG key for `git tag -s`, and `gh` logged in.
@@ -16,12 +18,15 @@
 set -euo pipefail
 
 DRY_RUN=0
-case "${1:-}" in
-  --dry-run) DRY_RUN=1 ;;
-  "") ;;
-  -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-  *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
-esac
+NEW_KEY=0
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --new-key) NEW_KEY=1 ;;
+    -h|--help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown option: $arg (try --help)" >&2; exit 2 ;;
+  esac
+done
 
 cd "$(dirname "$0")/.."
 
@@ -67,6 +72,11 @@ gh auth status >/dev/null 2>&1 || die "gh is not logged in: run gh auth login."
 git config user.signingkey >/dev/null || warn "No user.signingkey in git config; git tag -s will use your default GPG key."
 
 [[ -f keystore.properties ]] || die "keystore.properties is missing: the APK would be unsigned."
+STORE_FILE=$(sed -n 's/^storeFile=//p' keystore.properties | sed 's/[[:space:]]*$//')
+[[ -n "$STORE_FILE" ]] || die "keystore.properties has no storeFile= line."
+[[ "$STORE_FILE" != "~"* ]] || die "storeFile starts with ~, which Gradle doesn't expand. Use the full path: ${STORE_FILE/#\~/$HOME}"
+[[ "$STORE_FILE" == /* ]] || STORE_FILE="$PWD/$STORE_FILE"
+[[ -f "$STORE_FILE" ]] || die "Signing key not found at $STORE_FILE (storeFile in keystore.properties)."
 [[ -z "$(git status --porcelain)" ]] || die "Working tree has uncommitted changes. Commit or stash them first."
 
 say "Updating main"
@@ -98,6 +108,11 @@ NOTES="$WORK/notes.md"
 RANGE=${PREV_TAG:+$PREV_TAG..}HEAD
 git log "$RANGE" --no-merges --reverse --format='- %s' | sed -E 's/ \(#[0-9]+\)$//' > "$NOTES"
 [[ -s "$NOTES" ]] || die "No commits since $PREV_TAG: nothing to release."
+if (( NEW_KEY )); then
+  { echo "> **Install note:** this release is signed with a new key. Uninstall the previous version before"
+    echo "> installing it (saved timers are lost); later releases update normally."
+    echo; cat "$NOTES"; } > "$NOTES.tmp" && mv "$NOTES.tmp" "$NOTES"
+fi
 echo "Commits in ${PREV_TAG:-the history} → HEAD:"
 echo
 cat "$NOTES"
@@ -129,9 +144,16 @@ if [[ -n "$PREV_TAG" ]] && gh release download "$PREV_TAG" --pattern '*.apk' --d
   OLD_CERT=$("$APKSIGNER" verify --print-certs "$(find "$WORK/prev" -name '*.apk' | head -1)" \
     | awk -F': ' '/certificate SHA-256 digest/ {print $2; exit}')
 fi
-if [[ -n "$OLD_CERT" ]]; then
-  [[ "$OLD_CERT" == "$NEW_CERT" ]] || die "Certificate differs from $PREV_TAG ($OLD_CERT). Phones can't update to this APK."
+if [[ -n "$OLD_CERT" && "$OLD_CERT" == "$NEW_CERT" ]]; then
+  (( NEW_KEY )) && warn "--new-key was given, but the certificate is the same as $PREV_TAG's."
   echo "Same certificate as $PREV_TAG."
+elif [[ -n "$OLD_CERT" ]]; then
+  (( NEW_KEY )) || die "Certificate differs from $PREV_TAG ($OLD_CERT). Phones can't update to this APK. If you switched keys on purpose, run again with --new-key."
+  warn "New signing key: $PREV_TAG was signed with $OLD_CERT."
+  warn "Phones with $PREV_TAG installed must uninstall it (losing saved timers) before installing $TAG."
+  confirm "Release $TAG with the new key?" || die "Aborted."
+elif (( NEW_KEY )); then
+  warn "Couldn't get the APK of ${PREV_TAG:-a previous release} to compare; releasing with the new key as requested."
 else
   warn "Couldn't get the APK of ${PREV_TAG:-a previous release} to compare certificates."
   confirm "Is the certificate above the one you always sign with?" || die "Aborted."

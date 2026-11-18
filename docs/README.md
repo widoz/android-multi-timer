@@ -89,17 +89,29 @@ Source files are under `app/src/main/java/dev/multitimer/app/`.
 
 ## Release builds
 
-Release builds are signed with the key described in `keystore.properties` at the project root.
-That file and the `.jks` key are git-ignored: keep them private and back them up, because updates
-only install over an existing copy when signed with the same key.
+Release builds are signed with the key described in `keystore.properties` at the project root
+(see [ADR 0016](adr/0016-new-release-signing-key.md)). That file is git-ignored and the key lives
+outside the repository: keep both backed up, because updates only install over an existing copy
+when signed with the same key.
 
-```bash
-./gradlew assembleRelease
+```properties
+storeFile=/Users/<you>/.keys/multi-timer-release.jks   # absolute path: Gradle doesn't expand ~
+storePassword=...
+keyAlias=multitimer
+keyPassword=...
 ```
 
-The signed APK lands in `app/build/outputs/apk/release/app-release.apk`. Without
-`keystore.properties`, the release APK is built unsigned. Bump `versionCode` and `versionName` in
-`app/build.gradle.kts` for each release.
+Bump `versionCode` and `versionName` in `app/build.gradle.kts`, commit, then release with:
+
+```bash
+tools/release.sh --dry-run   # build and checks only
+tools/release.sh             # signed tag, GitHub release with the APK
+```
+
+The script needs JDK 17–24, the Android SDK, `gh` and a GPG key for signed tags (`--help` lists
+the steps). It stops if the signing certificate differs from the previous release's; `--new-key`
+accepts a deliberate key change once. A plain `./gradlew assembleRelease` also works and writes
+`app/build/outputs/apk/release/app-release.apk`; without `keystore.properties` it is unsigned.
 
 ## Theme and accessibility
 

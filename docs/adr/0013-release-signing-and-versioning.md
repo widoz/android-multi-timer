@@ -1,6 +1,6 @@
 # 0013. Release signing, versioning and distribution
 
-- Status: Accepted
+- Status: Accepted; the signing key is replaced by [0016](0016-new-release-signing-key.md)
 - Date: 2026-11-06
 
 ## Context
