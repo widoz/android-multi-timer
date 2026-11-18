@@ -16,12 +16,13 @@
 set -euo pipefail
 
 DRY_RUN=0
-case "${1:-}" in
-  --dry-run) DRY_RUN=1 ;;
-  "") ;;
-  -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-  *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
-esac
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown option: $arg (try --help)" >&2; exit 2 ;;
+  esac
+done
 
 cd "$(dirname "$0")/.."
 
@@ -67,6 +68,11 @@ gh auth status >/dev/null 2>&1 || die "gh is not logged in: run gh auth login."
 git config user.signingkey >/dev/null || warn "No user.signingkey in git config; git tag -s will use your default GPG key."
 
 [[ -f keystore.properties ]] || die "keystore.properties is missing: the APK would be unsigned."
+STORE_FILE=$(sed -n 's/^storeFile=//p' keystore.properties | sed 's/[[:space:]]*$//')
+[[ -n "$STORE_FILE" ]] || die "keystore.properties has no storeFile= line."
+[[ "$STORE_FILE" != "~"* ]] || die "storeFile starts with ~, which Gradle doesn't expand. Use the full path: ${STORE_FILE/#\~/$HOME}"
+[[ "$STORE_FILE" == /* ]] || STORE_FILE="$PWD/$STORE_FILE"
+[[ -f "$STORE_FILE" ]] || die "Signing key not found at $STORE_FILE (storeFile in keystore.properties)."
 [[ -z "$(git status --porcelain)" ]] || die "Working tree has uncommitted changes. Commit or stash them first."
 
 say "Updating main"
@@ -130,7 +136,9 @@ if [[ -n "$PREV_TAG" ]] && gh release download "$PREV_TAG" --pattern '*.apk' --d
     | awk -F': ' '/certificate SHA-256 digest/ {print $2; exit}')
 fi
 if [[ -n "$OLD_CERT" ]]; then
-  [[ "$OLD_CERT" == "$NEW_CERT" ]] || die "Certificate differs from $PREV_TAG ($OLD_CERT). Phones can't update to this APK."
+  # A different key means phones can't update. Changing keys is a rare, deliberate event that gets
+  # its own ADR (see docs/adr/0016), never a release-script option.
+  [[ "$OLD_CERT" == "$NEW_CERT" ]] || die "Certificate differs from $PREV_TAG ($OLD_CERT). Phones can't update to this APK: check keystore.properties points at the release key."
   echo "Same certificate as $PREV_TAG."
 else
   warn "Couldn't get the APK of ${PREV_TAG:-a previous release} to compare certificates."

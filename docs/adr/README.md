@@ -19,3 +19,4 @@ Why Multi Timer is built the way it is. Behavior (what it does) is specified in 
 | [0013](0013-release-signing-and-versioning.md) | Release signing, versioning and distribution | Accepted |
 | [0014](0014-publish-to-google-play.md) | Publish to Google Play | Proposed |
 | [0015](0015-full-screen-timer.md) | Full-screen timer with a tray of finished timers | Accepted |
+| [0016](0016-new-release-signing-key.md) | New release signing key, created and kept locally | Accepted |
