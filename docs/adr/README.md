@@ -16,7 +16,7 @@ Why Multi Timer is built the way it is. Behavior (what it does) is specified in 
 | [0010](0010-neutral-theme-and-in-app-theme-choice.md) | Neutral theme and in-app theme choice | Accepted |
 | [0011](0011-wcag-aa-baseline.md) | WCAG 2.2 AA as the accessibility baseline | Accepted |
 | [0012](0012-minimum-android-11.md) | Minimum Android version 11 (API 30) | Accepted |
-| [0013](0013-release-signing-and-versioning.md) | Release signing, versioning and distribution | Accepted (key replaced by 0016) |
+| [0013](0013-release-signing-and-versioning.md) | Release signing, versioning and distribution | Accepted |
 | [0014](0014-publish-to-google-play.md) | Publish to Google Play | Proposed |
 | [0015](0015-full-screen-timer.md) | Full-screen timer with a tray of finished timers | Accepted |
 | [0016](0016-new-release-signing-key.md) | New release signing key, created and kept locally | Accepted |

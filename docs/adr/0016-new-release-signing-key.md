@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-18
+- Supersedes: the signing key of [0013](0013-release-signing-and-versioning.md)
 
 ## Context
 [0013](0013-release-signing-and-versioning.md) signs releases with a key generated in a cloud session
