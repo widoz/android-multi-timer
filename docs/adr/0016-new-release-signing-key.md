@@ -23,8 +23,10 @@ build can update existing 0.5.0 installs any more.
 - 0.6.0 is the first release signed with the new key. Its release notes say to uninstall the
   previous version before installing.
 - `tools/release.sh` compares each release's certificate with the APK of the previous release and
-  stops on a change, unless it runs with `--new-key`, which accepts the change once after a
-  confirmation and adds the uninstall note to the release notes.
+  stops on a change, with no way to override it. 0.5.0's release has no APK attached, so for 0.6.0
+  the script asks the owner to confirm the new certificate instead.
+- A future key change (lost or leaked key) is handled by hand and recorded in its own ADR, not
+  through the release script.
 - This key is also the upload key when the app moves to Google Play ([0014](0014-publish-to-google-play.md)).
 
 ## Alternatives considered
