@@ -87,32 +87,6 @@ Source files are under `app/src/main/java/dev/multitimer/app/`.
 | Full screen | `ui/FullScreenTimer.kt`, `alarm/FullScreenState.kt` | Full-screen timer, tray of finished timers (pager), keep-screen-on and hidden system bars; tells the alarm service not to pop up notifications while visible. |
 | UI | `ui/` | Timer list and cards, quick-start chips, create/edit bottom sheet, Settings, sound picker, confirmation dialogs, Undo snackbar. |
 
-## Release builds
-
-Release builds are signed with the key described in `keystore.properties` at the project root
-(see [ADR 0016](adr/0016-new-release-signing-key.md)). That file is git-ignored and the key lives
-outside the repository: keep both backed up, because updates only install over an existing copy
-when signed with the same key.
-
-```properties
-storeFile=/Users/<you>/.keys/multi-timer-release.jks   # absolute path: Gradle doesn't expand ~
-storePassword=...
-keyAlias=multitimer
-keyPassword=...
-```
-
-Bump `versionCode` and `versionName` in `app/build.gradle.kts`, commit, then release with:
-
-```bash
-tools/release.sh --dry-run   # build and checks only
-tools/release.sh             # signed tag, GitHub release with the APK
-```
-
-The script needs JDK 17–24, the Android SDK, `gh` and a GPG key for signed tags (`--help` lists
-the steps). It stops if the signing certificate differs from the previous release's; `--new-key`
-accepts a deliberate key change once. A plain `./gradlew assembleRelease` also works and writes
-`app/build/outputs/apk/release/app-release.apk`; without `keystore.properties` it is unsigned.
-
 ## Theme and accessibility
 
 - Light is white, dark uses Material's neutral greys (`#121212`, cards `#1E1E1E`). Controls are

@@ -43,7 +43,7 @@ Build it with Android Studio or from the command line. The
 
 | | |
 |---|---|
-| [Developer guide](docs/README.md) | How the app is built, release builds, permissions |
+| [Developer guide](docs/README.md) | How the app is built, permissions |
 | [Specifications](openspec/specs) | What the app does, as OpenSpec requirements and scenarios |
 | [Architecture decisions](docs/adr/README.md) | Why it is built this way |
 | [Interactive mockup](docs/design/mockup.html) | Try the design in a browser, sounds included |
